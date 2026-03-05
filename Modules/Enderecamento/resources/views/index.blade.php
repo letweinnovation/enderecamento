@@ -581,7 +581,7 @@
                                 <td colspan="6">
                                     <div class="enderecos-container">
                                         <div class="enderecos-header">
-                                            <i class="ph ph-map-pin"></i> Endereçamentos
+                                            <i class="ph ph-map-pin"></i> Endereçamentos - ${escapeHtml(arm.nome || 'Sem Nome')}
                                             <span class="loading-mini" id="load-arm-${arm.id}" style="display: none;"></span>
                                         </div>
                                         <div id="content-arm-${arm.id}"></div>
