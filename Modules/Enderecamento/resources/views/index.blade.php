@@ -321,22 +321,22 @@
 
         <div class="loading-spinner" id="loadingSpinner">
             <div class="spinner"></div>
-            <p>Carregando endereçamentos...</p>
+            <p>Carregando armazéns...</p>
         </div>
 
         <div id="emptyState" class="empty-state">
             <i class="ph ph-magnifying-glass"></i>
-            <p>Selecione um tenant para buscar os endereçamentos.</p>
+            <p>Selecione um tenant e clique em Buscar para listar os armazéns.</p>
         </div>
 
         <table class="results-table" id="resultsTable" style="display: none;">
             <thead>
                 <tr>
-                    <th>Endereço</th>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>ID Externo</th>
                     <th>Tipo</th>
-                    <th>Setor</th>
                     <th>Status</th>
-                    <th>Capacidade</th>
                 </tr>
             </thead>
             <tbody id="resultsBody"></tbody>
@@ -455,7 +455,7 @@
             document.getElementById('resultsBody').innerHTML = '';
         }
 
-        // Search endereçamentos (placeholder — will be connected to real API later)
+        // Search armazéns by tenant
         async function searchEnderecos() {
             const tenantId = document.getElementById('tenantId').value;
 
@@ -469,18 +469,50 @@
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('resultsTable').style.display = 'none';
 
-            // Simulate loading (will be replaced with real API call)
-            setTimeout(() => {
+            try {
+                const response = await fetch(`/api/enderecamentos/armazens?tenant_id=${encodeURIComponent(tenantId)}`);
+                const result = await response.json();
+
                 document.getElementById('loadingSpinner').classList.remove('show');
 
-                // Show empty state for now (no real data yet)
+                if (result.success && result.data.length > 0) {
+                    document.getElementById('resultsCount').textContent = `(${result.total} armazéns)`;
+                    document.getElementById('resultsBody').innerHTML = result.data.map(arm => `
+                        <tr>
+                            <td><code>${escapeHtml(String(arm.id))}</code></td>
+                            <td><strong>${escapeHtml(arm.nome || '-')}</strong></td>
+                            <td>${escapeHtml(arm.idExterno || '-')}</td>
+                            <td>${escapeHtml(arm.tipoArmazem || '-')}</td>
+                            <td>${formatStatus(arm.regStatus)}</td>
+                        </tr>
+                    `).join('');
+                    document.getElementById('resultsTable').style.display = 'table';
+                } else {
+                    document.getElementById('emptyState').innerHTML = `
+                        <i class="ph ph-package"></i>
+                        <p>Nenhum armazém encontrado para este tenant.</p>
+                    `;
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('loadingSpinner').classList.remove('show');
+                console.error('Error searching armazéns:', error);
+                showToast('Erro ao buscar armazéns.');
                 document.getElementById('emptyState').innerHTML = `
-                    <i class="ph ph-package"></i>
-                    <p>Nenhum endereçamento encontrado para este tenant.</p>
-                    <p style="font-size: 0.85rem; margin-top: 0.5rem; color: #9ca3af;">A integração com a API de endereçamentos será implementada em breve.</p>
+                    <i class="ph ph-warning"></i>
+                    <p>Erro ao buscar armazéns. Tente novamente.</p>
                 `;
                 document.getElementById('emptyState').style.display = 'block';
-            }, 800);
+            }
+        }
+
+        function formatStatus(status) {
+            if (status === 1 || status === '1') {
+                return '<span class="status-badge status-active">Ativo</span>';
+            } else if (status === 0 || status === '0') {
+                return '<span class="status-badge status-blocked">Inativo</span>';
+            }
+            return '<span class="status-badge status-empty">-</span>';
         }
     </script>
 @endpush

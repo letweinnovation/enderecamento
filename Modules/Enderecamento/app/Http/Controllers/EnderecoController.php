@@ -46,4 +46,34 @@ class EnderecoController extends Controller
             return response()->json([]);
         }
     }
+
+    /**
+     * Search armazéns by tenant ID (gtimeta_mcid).
+     */
+    public function searchArmazens(Request $request)
+    {
+        $tenantId = $request->get('tenant_id');
+
+        if (! $tenantId) {
+            return response()->json(['success' => false, 'message' => 'Tenant ID obrigatório.']);
+        }
+
+        try {
+            $armazens = DB::connection('gace')->table('armazem')
+                ->select('id', 'nome', 'idExterno', 'tipoArmazem', 'regStatus')
+                ->where('gtimeta_mcid', $tenantId)
+                ->orderBy('nome')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $armazens,
+                'total' => $armazens->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Armazem search error: '.$e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'Erro ao buscar armazéns.']);
+        }
+    }
 }

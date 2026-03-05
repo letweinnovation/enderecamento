@@ -9,4 +9,5 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->prefix('api/enderecamentos')->group(function () {
     Route::get('/tenants', [EnderecoController::class, 'searchTenants'])->name('enderecamento.tenants.search');
+    Route::get('/armazens', [EnderecoController::class, 'searchArmazens'])->name('enderecamento.armazens.search');
 });
