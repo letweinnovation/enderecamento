@@ -128,4 +128,62 @@ class EnderecoController extends Controller
             return response()->json(['success' => false, 'message' => 'Erro ao buscar endereçamentos.']);
         }
     }
+
+    /**
+     * Return the view for the physical layout tree.
+     */
+    public function layoutFisico($tenantId, $armazemId, $enderecamentoId)
+    {
+        // Pega nomes apenas para exibir no cabeçalho
+        $tenant = DB::connection('gace')->table('tenant')->where('id', $tenantId)->first();
+        $armazem = DB::connection('gace')->table('armazem')->where('Id', $armazemId)->first();
+        $enderecamento = DB::connection('gace')->table('enderecamento')->where('Id', $enderecamentoId)->first();
+
+        return view('enderecamento::layout-tree', compact('tenantId', 'armazemId', 'enderecamentoId', 'tenant', 'armazem', 'enderecamento'));
+    }
+
+    /**
+     * API to fetch purely layout physical tree items.
+     */
+    public function getLayoutFisico(Request $request)
+    {
+        $tenantId = $request->get('tenant_id');
+        $armazemId = $request->get('armazem_id');
+        $enderecamentoId = $request->get('enderecamento_id');
+
+        if (! $tenantId || ! $armazemId || ! $enderecamentoId) {
+            return response()->json(['success' => false, 'message' => 'Parâmetros obrigatórios não informados.']);
+        }
+
+        try {
+            $layout = DB::connection('gace')
+                ->table('layout_endereco_fisico')
+                ->select(
+                    'ID as id',
+                    'ID_LAYOUT_ENDERECO_FISICO_PAI as parent_id',
+                    'ENDERECO as nome',
+                    'ENDERECO_FORMATADO as formatado',
+                    'ALIAS_ENDERECO as alias',
+                    'IND_ENDERECAVEL as enderecavel',
+                    'LADO_ENDERECO as lado',
+                    'CUBAGEM_MAXIMA as max_cubagem'
+                )
+                ->where('GTIMETA_MCID', $tenantId)
+                ->where('ID_ARMAZEM', $armazemId)
+                ->where('ID_ENDERECAMENTO', $enderecamentoId)
+                ->where('IND_DESABILITADO', 0)
+                ->orderBy('ID_LAYOUT_ENDERECO_FISICO_PAI')
+                ->orderBy('ENDERECO', 'ASC')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $layout,
+                'total' => $layout->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Layout Fisico API error: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao buscar layout físico.']);
+        }
+    }
 }

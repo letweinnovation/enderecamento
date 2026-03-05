@@ -11,4 +11,9 @@ Route::middleware(['auth'])->prefix('api/enderecamentos')->group(function () {
     Route::get('/tenants', [EnderecoController::class, 'searchTenants'])->name('enderecamento.tenants.search');
     Route::get('/armazens', [EnderecoController::class, 'searchArmazens'])->name('enderecamento.armazens.search');
     Route::get('/enderecos', [EnderecoController::class, 'searchEnderecos'])->name('enderecamento.enderecos.search');
+    Route::get('/layout-fisico', [EnderecoController::class, 'getLayoutFisico'])->name('enderecamento.layout-fisico.api');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/layout-fisico/{tenantId}/{armazemId}/{enderecamentoId}', [EnderecoController::class, 'layoutFisico'])->name('enderecamento.layout-fisico');
 });
