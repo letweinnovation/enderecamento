@@ -191,6 +191,54 @@
             background: #f8fafc;
             border-color: #cbd5e1;
         }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .info-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .info-card-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-card-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .info-card-value {
+            font-size: 1rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
     </style>
 @endpush
 
@@ -205,6 +253,36 @@
                 {{ $tenant->name ?? 'Tenant' }} <i class="ph ph-caret-right"></i> 
                 {{ $armazem->nome ?? 'Armazém' }} <i class="ph ph-caret-right"></i> 
                 <strong>{{ $enderecamento->Formatacao ?? $enderecamento->Descricao ?? 'Endereçamento' }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-cards">
+        <div class="info-card">
+            <div class="info-card-icon">
+                <i class="ph ph-buildings"></i>
+            </div>
+            <div class="info-card-text">
+                <span class="info-card-label">Armazém</span>
+                <span class="info-card-value">{{ $armazem->nome ?? '-' }}</span>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-icon">
+                <i class="ph ph-map-pin"></i>
+            </div>
+            <div class="info-card-text">
+                <span class="info-card-label">Endereçamento (Formatação)</span>
+                <span class="info-card-value">{{ $enderecamento->Formatacao ?? '-' }}</span>
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-icon">
+                <i class="ph ph-tag"></i>
+            </div>
+            <div class="info-card-text">
+                <span class="info-card-label">Descrição</span>
+                <span class="info-card-value">{{ $enderecamento->Descricao ?? '-' }}</span>
             </div>
         </div>
     </div>

@@ -663,8 +663,8 @@
                                         <td>${end.indConsiderarCubagem ? (end.CUBAGEMPADRAO || '-') : '<span style="color:#cbd5e1">-</span>'}</td>
                                         <td>${formatStatus(end.regStatus)}</td>
                                         <td style="text-align: right;">
-                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" target="_blank" class="badge-cubagem" style="text-decoration:none; white-space:nowrap;">
-                                                <i class="ph ph-tree-structure"></i> Layout Físico
+                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" target="_blank" class="badge-cubagem" style="text-decoration:none; white-space:nowrap; background-color: var(--primary); color: white;">
+                                                <i class="ph ph-tree-structure"></i> Ajustar Endereços
                                             </a>
                                         </td>
                                     </tr>
