@@ -640,9 +640,9 @@
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Formatação</th>
                                             <th>Descrição</th>
                                             <th>ID Externo</th>
+                                            <th>Formatação</th>
                                             <th>Tipo</th>
                                             <th>Cubagem Padrão</th>
                                             <th>Status</th>
@@ -655,9 +655,9 @@
                                 table += `
                                     <tr>
                                         <td style="font-family: monospace; color: #64748b;">${end.id}</td>
-                                        <td><strong>${escapeHtml(end.formatacao || '-')}</strong></td>
                                         <td>${escapeHtml(end.descricao || '-')}</td>
                                         <td>${escapeHtml(end.idExterno || '-')}</td>
+                                        <td><strong>${escapeHtml(end.formatacao || '-')}</strong></td>
                                         <td>${escapeHtml(end.tipoEnderecamento || '-')}</td>
                                         <td>${end.indConsiderarCubagem ? (end.CUBAGEMPADRAO || '-') : '<span style="color:#cbd5e1">-</span>'}</td>
                                         <td>${formatStatus(end.regStatus)}</td>
