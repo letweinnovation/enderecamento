@@ -1,0 +1,11 @@
+{
+    "name": "Enderecamento",
+    "alias": "enderecamento",
+    "description": "Módulo de Endereçamento",
+    "keywords": [],
+    "priority": 1,
+    "providers": [
+        "Modules\\Enderecamento\\Providers\\EnderecamentoServiceProvider"
+    ],
+    "files": []
+}

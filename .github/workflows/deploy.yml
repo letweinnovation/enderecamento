@@ -1,0 +1,78 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA para deploy (deixe vazio para usar o último da main)'
+        required: false
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha != '' && inputs.commit_sha || 'main' }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, bcmath, soap, gd, pdo_mysql
+
+      - name: Install Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Backup Current Version
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            BACKUP_DIR="${{ secrets.TARGET_DIR }}/../backups"
+            mkdir -p "$BACKUP_DIR"
+            cd ${{ secrets.TARGET_DIR }}/..
+            FOLDER_NAME=$(basename "${{ secrets.TARGET_DIR }}")
+            tar -czf "$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).tar.gz" "$FOLDER_NAME" \
+              --exclude="$FOLDER_NAME/storage" \
+              --exclude="$FOLDER_NAME/node_modules"
+            ls -t "$BACKUP_DIR"/backup_*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm
+
+      - name: Sync Files via SSH
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          ARGS: "-rlgoDzvc -i --delete"
+          SOURCE: "."
+          REMOTE_HOST: ${{ secrets.HOSTINGER_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_PORT }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+          EXCLUDE: "/.github/, /.git/, /.env, /node_modules/, /storage/"
+
+      - name: Run Remote Commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            chmod -R 775 storage bootstrap/cache
+            /opt/alt/php84/usr/bin/php artisan migrate --force
+            /opt/alt/php84/usr/bin/php artisan cache:clear
+            /opt/alt/php84/usr/bin/php artisan config:clear
+            /opt/alt/php84/usr/bin/php artisan route:clear
+            /opt/alt/php84/usr/bin/php artisan view:clear
+            /opt/alt/php84/usr/bin/php artisan optimize
