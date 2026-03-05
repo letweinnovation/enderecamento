@@ -60,7 +60,13 @@ class EnderecoController extends Controller
 
         try {
             $armazens = DB::connection('gace')->table('armazem')
-                ->select('id', 'nome', 'idExterno', 'tipoArmazem', 'regStatus')
+                ->select(
+                    'Id as id', 
+                    'nome', 
+                    'IDEXTERNO as idExterno', 
+                    'IdTipoArmazem as tipoArmazem', 
+                    'RegStatus as regStatus'
+                )
                 ->where('gtimeta_mcid', $tenantId)
                 ->orderBy('nome')
                 ->get();
