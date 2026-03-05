@@ -82,4 +82,50 @@ class EnderecoController extends Controller
             return response()->json(['success' => false, 'message' => 'Erro ao buscar armazéns.']);
         }
     }
+
+    /**
+     * Search endereçamentos by armazém ID.
+     */
+    public function searchEnderecos(Request $request)
+    {
+        $tenantId = $request->get('tenant_id');
+        $armazemId = $request->get('armazem_id');
+
+        if (! $tenantId || ! $armazemId) {
+            return response()->json(['success' => false, 'message' => 'Tenant ID e Armazém ID são obrigatórios.']);
+        }
+
+        try {
+            $enderecos = DB::connection('gace')
+                ->table('enderecamento')
+                ->join('armazemenderecamento', function($join) use ($tenantId) {
+                    $join->on('enderecamento.Id', '=', 'armazemenderecamento.IdEnderecamento');
+                })
+                ->select(
+                    'enderecamento.Id as id',
+                    'enderecamento.Descricao as descricao',
+                    'enderecamento.IDEXTERNO as idExterno',
+                    'enderecamento.tipoEnderecamento',
+                    'enderecamento.formatacao',
+                    'enderecamento.RegStatus as regStatus',
+                    'enderecamento.indConsiderarCubagem',
+                    'enderecamento.CUBAGEMPADRAO'
+                )
+                ->where('armazemenderecamento.IdArmazem', $armazemId)
+                ->where('enderecamento.gtimeta_mcid', $tenantId)
+                ->orderBy('enderecamento.formatacao')
+                ->orderBy('enderecamento.Descricao')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $enderecos,
+                'total' => $enderecos->count(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Enderecamento search error: '.$e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'Erro ao buscar endereçamentos.']);
+        }
+    }
 }

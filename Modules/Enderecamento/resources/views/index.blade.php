@@ -204,8 +204,96 @@
             font-size: 0.9rem;
         }
 
-        .results-table tbody tr:hover {
+        .results-table tbody tr.main-row {
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .results-table tbody tr.main-row:hover {
             background: #f0fdfa;
+        }
+
+        .results-table tbody tr.expanded {
+            background: #f8fafc;
+        }
+
+        .results-table tbody tr.expanded td {
+            border-bottom: none;
+        }
+
+        /* Endereçamentos Expandidos (Sub-tabela) */
+        .sub-row {
+            display: none;
+            background: #f8fafc;
+        }
+
+        .sub-row.show {
+            display: table-row;
+        }
+
+        .sub-row td {
+            padding: 0 1rem 1rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .enderecos-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .enderecos-header {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .enderecos-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .enderecos-table th {
+            text-align: left;
+            padding: 0.5rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+        }
+
+        .enderecos-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .enderecos-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s;
+            color: var(--text-muted);
+        }
+
+        .expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .loading-mini {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e5e7eb;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
         }
 
         /* Empty State */
@@ -332,6 +420,7 @@
         <table class="results-table" id="resultsTable" style="display: none;">
             <thead>
                 <tr>
+                    <th style="width: 40px;"></th>
                     <th>ID</th>
                     <th>Nome</th>
                     <th>ID Externo</th>
@@ -464,7 +553,6 @@
                 return;
             }
 
-            // Show loading
             document.getElementById('loadingSpinner').classList.add('show');
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('resultsTable').style.display = 'none';
@@ -477,15 +565,33 @@
 
                 if (result.success && result.data.length > 0) {
                     document.getElementById('resultsCount').textContent = `(${result.total} armazéns)`;
-                    document.getElementById('resultsBody').innerHTML = result.data.map(arm => `
-                        <tr>
-                            <td><code>${escapeHtml(String(arm.id))}</code></td>
-                            <td><strong>${escapeHtml(arm.nome || '-')}</strong></td>
-                            <td>${escapeHtml(arm.idExterno || '-')}</td>
-                            <td>${escapeHtml(arm.tipoArmazem || '-')}</td>
-                            <td>${formatStatus(arm.regStatus)}</td>
-                        </tr>
-                    `).join('');
+                    
+                    let html = '';
+                    result.data.forEach(arm => {
+                        html += `
+                            <tr class="main-row" onclick="toggleArmazem(this, ${arm.id}, '${tenantId}')">
+                                <td><i class="ph ph-caret-right expand-icon"></i></td>
+                                <td><code>${escapeHtml(String(arm.id))}</code></td>
+                                <td><strong>${escapeHtml(arm.nome || '-')}</strong></td>
+                                <td>${escapeHtml(arm.idExterno || '-')}</td>
+                                <td>${escapeHtml(arm.tipoArmazem || '-')}</td>
+                                <td>${formatStatus(arm.regStatus)}</td>
+                            </tr>
+                            <tr class="sub-row" id="sub-arm-${arm.id}">
+                                <td colspan="6">
+                                    <div class="enderecos-container">
+                                        <div class="enderecos-header">
+                                            <i class="ph ph-map-pin"></i> Endereçamentos
+                                            <span class="loading-mini" id="load-arm-${arm.id}" style="display: none;"></span>
+                                        </div>
+                                        <div id="content-arm-${arm.id}"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    document.getElementById('resultsBody').innerHTML = html;
                     document.getElementById('resultsTable').style.display = 'table';
                 } else {
                     document.getElementById('emptyState').innerHTML = `
@@ -503,6 +609,73 @@
                     <p>Erro ao buscar armazéns. Tente novamente.</p>
                 `;
                 document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        async function toggleArmazem(row, armazemId, tenantId) {
+            const isExpanded = row.classList.contains('expanded');
+            const subRow = document.getElementById(`sub-arm-${armazemId}`);
+            const contentDiv = document.getElementById(`content-arm-${armazemId}`);
+            const loader = document.getElementById(`load-arm-${armazemId}`);
+
+            if (isExpanded) {
+                // Collapse
+                row.classList.remove('expanded');
+                subRow.classList.remove('show');
+            } else {
+                // Expand
+                row.classList.add('expanded');
+                subRow.classList.add('show');
+                
+                // Fetch if not already loaded
+                if (contentDiv.innerHTML.trim() === '') {
+                    loader.style.display = 'inline-block';
+                    try {
+                        const response = await fetch(`/api/enderecamentos/enderecos?tenant_id=${encodeURIComponent(tenantId)}&armazem_id=${armazemId}`);
+                        const result = await response.json();
+                        
+                        if (result.success && result.data.length > 0) {
+                            let table = `
+                                <table class="enderecos-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Formatação</th>
+                                            <th>Descrição</th>
+                                            <th>ID Externo</th>
+                                            <th>Tipo</th>
+                                            <th>Cubagem Padrão</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                            `;
+                            
+                            result.data.forEach(end => {
+                                table += `
+                                    <tr>
+                                        <td style="font-family: monospace; color: #64748b;">${end.id}</td>
+                                        <td><strong>${escapeHtml(end.formatacao || '-')}</strong></td>
+                                        <td>${escapeHtml(end.descricao || '-')}</td>
+                                        <td>${escapeHtml(end.idExterno || '-')}</td>
+                                        <td>${escapeHtml(end.tipoEnderecamento || '-')}</td>
+                                        <td>${end.indConsiderarCubagem ? (end.CUBAGEMPADRAO || '-') : '<span style="color:#cbd5e1">-</span>'}</td>
+                                        <td>${formatStatus(end.regStatus)}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            table += `</tbody></table>`;
+                            contentDiv.innerHTML = table;
+                        } else {
+                            contentDiv.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem;">Nenhum endereçamento encontrado para este armazém.</p>';
+                        }
+                    } catch (err) {
+                        contentDiv.innerHTML = '<p style="color: #ef4444; font-size: 0.85rem; padding: 0.5rem;">Erro ao carregar endereçamentos.</p>';
+                    } finally {
+                        loader.style.display = 'none';
+                    }
+                }
             }
         }
 
