@@ -226,9 +226,14 @@ class EnderecoController extends Controller
 
                 $nivel = $niveis[$levelIndex];
                 
-                $inicio = $nivel['inicio'] ?? 1;
-                $fim = $nivel['fim'] ?? 1;
+                $inicio = (string)($nivel['inicio'] ?? '1');
+                $fim = (string)($nivel['fim'] ?? '1');
                 
+                $padLength = 0;
+                if (strlen($inicio) > 1 && str_starts_with($inicio, '0')) {
+                    $padLength = strlen($inicio);
+                }
+
                 if (is_numeric($inicio) && is_numeric($fim)) {
                     $items = range((int)$inicio, (int)$fim);
                 } else {
@@ -236,9 +241,9 @@ class EnderecoController extends Controller
                 }
 
                 foreach ($items as $item) {
-                    $formattedItem = $item;
-                    if (is_numeric($item) && isset($nivel['casas_decimais']) && (int)$nivel['casas_decimais'] > 0) {
-                        $formattedItem = str_pad($item, (int)$nivel['casas_decimais'], '0', STR_PAD_LEFT);
+                    $formattedItem = (string)$item;
+                    if ($padLength > 0 && is_numeric($item)) {
+                        $formattedItem = str_pad($item, $padLength, '0', STR_PAD_LEFT);
                     }
 
                     $sigla = ($nivel['prefixo'] ?? '') . $formattedItem . ($nivel['sufixo'] ?? '');
@@ -246,7 +251,7 @@ class EnderecoController extends Controller
                     if ($parentNameFormat === '') {
                         $formatado = $sigla;
                     } else {
-                        $separador = $nivel['separador'] ?? '';
+                        $separador = $nivel['separador'] ?? '-';
                         $formatado = $parentNameFormat . $separador . $sigla;
                     }
                     
