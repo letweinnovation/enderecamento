@@ -507,8 +507,11 @@
         function generateNodeHtml(node) {
             // Is it a leaf node? (No children or is explicitly enderecavel and has no children)
             if (node.children.length === 0) {
-                const aliasBadge = node.alias ? `<span class="node-alias">${node.alias}</span>` : '';
-                const formatado = node.formatado ? `(${node.formatado})` : '';
+                const isAliasSame = node.alias === node.nome;
+                const isFormatadoSame = node.formatado === node.nome;
+
+                const aliasBadge = (node.alias && !isAliasSame) ? `<span class="node-alias" title="Alias">${node.alias}</span>` : '';
+                const formatado = (node.formatado && !isFormatadoSame) ? `<span title="Formatado">(${node.formatado})</span>` : '';
                 const maxCub = node.max_cubagem ? `<span class="badge-cubagem"><i class="ph ph-cube"></i> Max: ${node.max_cubagem}</span>` : '';
                 
                 return `
