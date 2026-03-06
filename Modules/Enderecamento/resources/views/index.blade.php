@@ -352,6 +352,38 @@
             color: #dc2626;
         }
 
+        .status-badge.inactive {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+
+        /* Botão Ajustar Endereços */
+        .btn-ajustar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #0369a1 100%);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
+            white-space: nowrap;
+        }
+
+        .btn-ajustar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3);
+            background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        }
+
+        .btn-ajustar i {
+            font-size: 1rem;
+        }
+
         .status-empty {
             background: #f3f4f6;
             color: #6b7280;
@@ -663,7 +695,7 @@
                                         <td>${end.indConsiderarCubagem ? (end.CUBAGEMPADRAO || '-') : '<span style="color:#cbd5e1">-</span>'}</td>
                                         <td>${formatStatus(end.regStatus)}</td>
                                         <td style="text-align: right;">
-                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" target="_blank" class="badge-cubagem" style="text-decoration:none; white-space:nowrap; background-color: var(--primary); color: white;">
+                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" target="_blank" class="btn-ajustar">
                                                 <i class="ph ph-tree-structure"></i> Ajustar Endereços
                                             </a>
                                         </td>
