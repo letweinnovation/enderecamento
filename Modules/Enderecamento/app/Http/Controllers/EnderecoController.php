@@ -244,11 +244,9 @@ class EnderecoController extends Controller
                     
                     if ($parentNameFormat === '') {
                         $formatado = $sigla;
-                        $alias = $sigla;
                     } else {
                         $separador = $nivel['separador'] ?? '';
                         $formatado = $parentNameFormat . $separador . $sigla;
-                        $alias = $formatado;
                     }
                     
                     $myId = $currentId++;
@@ -259,7 +257,7 @@ class EnderecoController extends Controller
 
                     $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
                         "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                        "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
+                        "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$formatado}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
 
                     $generateNodes($levelIndex + 1, $myId, $formatado);
                 }
