@@ -697,6 +697,8 @@
         }
 
         // ==========================================
+        
+        function showError(msg) {
             document.getElementById('treeContainer').innerHTML = `
                 <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                     <i class="ph ph-warning" style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;"></i>
