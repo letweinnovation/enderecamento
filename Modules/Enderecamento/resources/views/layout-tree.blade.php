@@ -565,18 +565,6 @@
             }
 
             emptyEl.style.display = 'none';
-            // ... resto do código 
-                rootEl.innerHTML = `
-                    <div style="color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
-                        <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
-                        <strong>Esta estrutura não possui Layout Físico gerado</strong><br><br>
-                        Clique em <span style="color: var(--primary); font-weight: bold;">Gerar na Raiz</span> acima para criar os primeiros corredores e ruas.
-                    </div>
-                `;
-                document.getElementById('treeLoading').style.display = 'none';
-                rootEl.style.display = 'block';
-                return [];
-            }
 
             const map = {};
             const roots = [];
