@@ -755,6 +755,68 @@
                     targets = siblings.map(s => ({id: s.id, formatado: s.formatado}));
                 }
 
+                // --- VALIDAÇÃO DE CONFLITOS (FRONTEND PRE-FETCH) ---
+                const existingFormats = new Set(window.layoutFisicoData.map(n => n.formatado));
+                let foundConflicts = [];
+                let limitExamples = 3;
+
+                // Constrói iterativamente todos os nós que vão nascer para testar a colisão
+                targets.forEach(tgt => {
+                    let startNum = parseFloat(initValue);
+                    let endNum = parseFloat(fimValue);
+                    let isNumeric = !isNaN(startNum) && !isNaN(endNum);
+                    
+                    let arr = [];
+                    if(isNumeric) {
+                        for(let i = startNum; i <= endNum; i++) arr.push(i.toString());
+                    } else {
+                        // Letras simples
+                        arr.push(initValue.toString());
+                        if(initValue !== fimValue) arr.push(fimValue.toString()); // Aproximação pra chars
+                    }
+
+                    let prefix = ""; // se formos usar futuramente
+                    let suffix = "";
+                    let padStr = initValue.toString();
+                    
+                    arr.forEach(val => {
+                        let finalVal = val;
+                        // zero-padding basico se inicio começar com 0
+                        if (padStr.length > 1 && padStr.startsWith('0') && !isNaN(val)) {
+                            finalVal = String(val).padStart(padStr.length, '0');
+                        }
+                        
+                        let sigla = prefix + finalVal + suffix;
+                        let formatadoHipotetico = (tgt.formatado === '') ? sigla : (tgt.formatado + '-' + sigla);
+                        
+                        if (existingFormats.has(formatadoHipotetico)) {
+                            if(foundConflicts.length < limitExamples) {
+                                foundConflicts.push(formatadoHipotetico);
+                            } else if (foundConflicts.length === limitExamples) {
+                                foundConflicts.push('...');
+                            }
+                        }
+                    });
+                });
+
+                if (foundConflicts.length > 0) {
+                    btn.innerHTML = '<i class="ph ph-magic-wand"></i> Injetar Previews';
+                    btn.disabled = false;
+                    
+                    const plural = foundConflicts.length > 1 || foundConflicts.includes('...') ? 'Os endereços' : 'O endereço';
+                    const exampleStr = foundConflicts.join(', ');
+                    
+                    const confirmMsg = `Atenção: ${plural} "${exampleStr}" já constam na árvore atual (seja oficial ou em rascunho).\n\nDeseja seguir injetando esses itens mesmo assim, duplicando as vias?`;
+                    
+                    if (!confirm(confirmMsg)) {
+                        return; // Usuário cancelou
+                    }
+                    
+                    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando...';
+                    btn.disabled = true;
+                }
+                // --- FIM DA VALIDAÇÃO ---
+
                 const promises = targets.map(target => {
                     return fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
                         method: 'POST',
