@@ -186,4 +186,96 @@ class EnderecoController extends Controller
             return response()->json(['success' => false, 'message' => 'Erro ao buscar layout físico.']);
         }
     }
+
+    /**
+     * Generate SQL script for batch inserting physical layout addresses based on levels.
+     */
+    public function generateLayoutScript(Request $request)
+    {
+        $tenantId = $request->input('tenant_id');
+        $armazemId = $request->input('armazem_id');
+        $enderecamentoId = $request->input('enderecamento_id');
+        $niveis = $request->input('niveis', []);
+
+        if (!$tenantId || !$armazemId || !$enderecamentoId || empty($niveis)) {
+            return response()->json(['success' => false, 'message' => 'Parâmetros inválidos.']);
+        }
+
+        try {
+            $maxIdObj = DB::connection('gace')
+                ->table('layout_endereco_fisico')
+                ->selectRaw('MAX(ID) as max_id')
+                ->first();
+            
+            $currentId = ($maxIdObj && $maxIdObj->max_id) ? (int)$maxIdObj->max_id + 1 : 1;
+            
+            $now = now()->format('Y-m-d H:i:s');
+            $userId = auth()->id() ?? 'system';
+
+            $sqlLines = [];
+            $sqlLines[] = "-- Script de Geração de Layout Físico em Lote";
+            $sqlLines[] = "-- Armazem ID: {$armazemId} | Enderecamento ID: {$enderecamentoId}";
+            $sqlLines[] = "-- Atenção: Valide os IDs antes de executar se houver acesso concorrente pesado ao WMS.";
+            $sqlLines[] = "BEGIN;";
+
+            $generateNodes = function($levelIndex, $parentId, $parentNameFormat) use (&$generateNodes, &$currentId, &$sqlLines, $niveis, $tenantId, $armazemId, $enderecamentoId, $now, $userId) {
+                if (!isset($niveis[$levelIndex])) {
+                    return;
+                }
+
+                $nivel = $niveis[$levelIndex];
+                
+                $inicio = $nivel['inicio'] ?? 1;
+                $fim = $nivel['fim'] ?? 1;
+                
+                if (is_numeric($inicio) && is_numeric($fim)) {
+                    $items = range((int)$inicio, (int)$fim);
+                } else {
+                    $items = range($inicio, $fim);
+                }
+
+                foreach ($items as $item) {
+                    $formattedItem = $item;
+                    if (is_numeric($item) && isset($nivel['casas_decimais']) && (int)$nivel['casas_decimais'] > 0) {
+                        $formattedItem = str_pad($item, (int)$nivel['casas_decimais'], '0', STR_PAD_LEFT);
+                    }
+
+                    $sigla = ($nivel['prefixo'] ?? '') . $formattedItem . ($nivel['sufixo'] ?? '');
+                    
+                    if ($parentNameFormat === '') {
+                        $formatado = $sigla;
+                        $alias = $sigla;
+                    } else {
+                        $separador = $nivel['separador'] ?? '';
+                        $formatado = $parentNameFormat . $separador . $sigla;
+                        $alias = $formatado;
+                    }
+                    
+                    $myId = $currentId++;
+                    
+                    $tipoComponente = (int)($nivel['tipo_componente'] ?? 1);
+                    $enderecavel = (!empty($nivel['enderecavel']) && filter_var($nivel['enderecavel'], FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
+                    $parentVal = $parentId === null ? 'NULL' : $parentId;
+
+                    $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
+                        "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
+                        "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
+
+                    $generateNodes($levelIndex + 1, $myId, $formatado);
+                }
+            };
+
+            $generateNodes(0, null, '');
+
+            $sqlLines[] = "COMMIT;";
+
+            return response()->json([
+                'success' => true,
+                'sql' => implode("\n", $sqlLines)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Layout Fisico Batch Generate Error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao gerar script SQL.']);
+        }
+    }
 }

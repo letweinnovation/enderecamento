@@ -239,6 +239,115 @@
             color: var(--text-main);
             font-weight: 500;
         }
+
+        /* Batch Generator */
+        .batch-panel {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .batch-level-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 0.5rem;
+            align-items: end;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            background: white;
+        }
+        
+        @media (max-width: 1024px) {
+            .batch-level-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .batch-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .batch-input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .batch-input-group input, .batch-input-group select {
+            padding: 0.4rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .btn-add-level {
+            background: white;
+            border: 1px dashed #cbd5e1;
+            padding: 0.5rem;
+            border-radius: 6px;
+            width: 100%;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: background 0.2s;
+        }
+
+        .btn-add-level:hover {
+            background: #f1f5f9;
+        }
+
+        .btn-remove-level {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 33px;
+        }
+        
+        .sql-output-container {
+            margin-top: 1rem;
+            position: relative;
+            display: none;
+        }
+        
+        .sql-textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            padding: 1rem;
+            background: #1e293b;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        .btn-copy-sql {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
     </style>
 @endpush
 
@@ -294,6 +403,33 @@
         <button class="btn-tree-outline" onclick="collapseAll()">
             <i class="ph ph-arrows-in"></i> Recolher Tudo
         </button>
+        <button class="btn-tree-outline" style="color: var(--primary); border-color: var(--primary); margin-left: auto;" onclick="toggleBatchMode()">
+            <i class="ph ph-magic-wand"></i> Gerador em Lote (SQL)
+        </button>
+    </div>
+
+    <!-- Batch Generator Panel -->
+    <div class="batch-panel" id="batchPanel">
+        <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Gerar Layout Físico em Lote</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Crie níveis de endereços (ex: Ruas, Vãos, Posições). Defina os intervalos numéricos ou letras (A-Z) para cada subnível. A ferramenta irá construir a árvore gerando um Script SQL de <code>INSERT</code> puro.</p>
+        
+        <div id="levelsContainer"></div>
+        
+        <button class="btn-add-level" onclick="addBatchLevel()">
+            <i class="ph ph-plus"></i> Adicionar Nível / Subnível
+        </button>
+
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-ajustar" onclick="generateBatchSql()" id="btnGenerateSql" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="ph ph-file-sql"></i> Gerar Script SQL
+            </button>
+            <button class="btn-tree-outline" onclick="toggleBatchMode()">Cancelar</button>
+        </div>
+
+        <div class="sql-output-container" id="sqlOutputContainer">
+            <button class="btn-copy-sql" onclick="copySql()"><i class="ph ph-copy"></i> Copiar Código</button>
+            <textarea id="sqlOutputContent" class="sql-textarea" readonly></textarea>
+        </div>
     </div>
 
     <div class="tree-container" id="treeContainer">
@@ -416,7 +552,151 @@
             document.querySelectorAll('details.tree-node').forEach(detail => detail.open = false);
         }
 
-        function showError(msg) {
+        // ==========================================
+        // BATCH GENERATOR LOGIC
+        // ==========================================
+        let levelCount = 0;
+
+        function toggleBatchMode() {
+            const panel = document.getElementById('batchPanel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+                if (levelCount === 0) {
+                    addBatchLevel(); // add first level automatically
+                }
+            }
+        }
+
+        function addBatchLevel() {
+            const container = document.getElementById('levelsContainer');
+            const index = levelCount++;
+            
+            const div = document.createElement('div');
+            div.className = 'batch-level-row';
+            div.id = `level-row-${index}`;
+            
+            div.innerHTML = `
+                <div class="batch-input-group">
+                    <label>Tipo Componente</label>
+                    <select class="level-tipo">
+                        <option value="1">1 - Corredor</option>
+                        <option value="2">2 - Prédio / Estante</option>
+                        <option value="3">3 - Nível / Andar</option>
+                        <option value="4">4 - Vão / Posição</option>
+                    </select>
+                </div>
+                <div class="batch-input-group">
+                    <label>Prefixo</label>
+                    <input type="text" class="level-prefixo" placeholder="Ex: R" value="">
+                </div>
+                <div class="batch-input-group">
+                    <label>Início (Ex: 1 ou A)</label>
+                    <input type="text" class="level-inicio" value="1">
+                </div>
+                <div class="batch-input-group">
+                    <label>Fim (Ex: 10 ou Z)</label>
+                    <input type="text" class="level-fim" value="10">
+                </div>
+                <div class="batch-input-group">
+                    <label>Sufixo</label>
+                    <input type="text" class="level-sufixo" placeholder="Ex: A" value="">
+                </div>
+                <div class="batch-input-group" title="Zerar a esquerda (ex: 1 vira 01 se for 2)">
+                    <label>Zeros (Pad)</label>
+                    <input type="number" class="level-casas" value="2" min="1" max="10">
+                </div>
+                <div class="batch-input-group">
+                    <label>Config Final</label>
+                    <div style="display:flex; gap: 0.5rem;">
+                        <input type="text" class="level-separador" placeholder="Sep: -" value="-" style="width: 50%" title="Separador do nível anterior">
+                        <label style="display:flex; align-items:center; gap: 4px; white-space:nowrap; cursor:pointer;">
+                            <input type="checkbox" class="level-enderecavel"> Endereçável?
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-remove-level" onclick="remBatchLevel(${index})" title="Remover Nível">
+                    <i class="ph ph-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function remBatchLevel(index) {
+            const row = document.getElementById(`level-row-${index}`);
+            if (row) row.remove();
+        }
+
+        async function generateBatchSql() {
+            const rows = document.querySelectorAll('.batch-level-row');
+            if (rows.length === 0) {
+                showToast("Adicione pelo menos um nível.");
+                return;
+            }
+
+            const payloadNiveis = [];
+            rows.forEach((row, idx) => {
+                payloadNiveis.push({
+                    tipo_componente: parseInt(row.querySelector('.level-tipo').value),
+                    prefixo: row.querySelector('.level-prefixo').value,
+                    inicio: row.querySelector('.level-inicio').value,
+                    fim: row.querySelector('.level-fim').value,
+                    sufixo: row.querySelector('.level-sufixo').value,
+                    casas_decimais: parseInt(row.querySelector('.level-casas').value || 0),
+                    separador: row.querySelector('.level-separador').value,
+                    enderecavel: row.querySelector('.level-enderecavel').checked
+                });
+            });
+
+            const btn = document.getElementById('btnGenerateSql');
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando SQL...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/enderecamentos/layout-fisico/generate-script', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        tenant_id: tenantId,
+                        armazem_id: armazemId,
+                        enderecamento_id: enderecamentoId,
+                        niveis: payloadNiveis
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('sqlOutputContainer').style.display = 'block';
+                    document.getElementById('sqlOutputContent').value = result.sql;
+                    document.getElementById('sqlOutputContent').scrollIntoView({ behavior: 'smooth' });
+                    showToast("Script gerado com sucesso!");
+                } else {
+                    alert('Erro: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error generating sql:', error);
+                alert("Falha de conexão.");
+            } finally {
+                btn.innerHTML = '<i class="ph ph-file-sql"></i> Gerar Script SQL';
+                btn.disabled = false;
+            }
+        }
+
+        function copySql() {
+            const sqlText = document.getElementById('sqlOutputContent');
+            sqlText.select();
+            sqlText.setSelectionRange(0, 999999); 
+            document.execCommand("copy");
+            showToast("Script copiado para área de transferência!");
+            window.getSelection().removeAllRanges();
+        }
+
+        // ==========================================
             document.getElementById('treeContainer').innerHTML = `
                 <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
                     <i class="ph ph-warning" style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;"></i>
