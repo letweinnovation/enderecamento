@@ -605,41 +605,6 @@
             });
 
             const btn = document.getElementById('btnGenerateSql');
-                    <label>Prefixo</label>
-                    <input type="text" class="level-prefixo" placeholder="Ex: R" value="">
-                </div>
-                <div class="batch-input-group">
-                    <label>Início (Ex: 1 ou A)</label>
-                    <input type="text" class="level-inicio" value="1">
-                </div>
-                <div class="batch-input-group">
-                    <label>Fim (Ex: 10 ou Z)</label>
-                    <input type="text" class="level-fim" value="10">
-                </div>
-                <div class="batch-input-group">
-                    <label>Sufixo</label>
-                    <input type="text" class="level-sufixo" placeholder="Ex: A" value="">
-                </div>
-                <div class="batch-input-group" title="Zerar a esquerda (ex: 1 vira 01 se for 2)">
-                    <label>Zeros (Pad)</label>
-                    <input type="number" class="level-casas" value="2" min="1" max="10">
-                </div>
-                <div class="batch-input-group">
-                    <label>Separador</label>
-                    <input type="text" class="level-separador" placeholder="Ex: -" value="-" title="Separador do nível anterior">
-                </div>
-                <button class="btn-remove-level" onclick="remBatchLevel(${index})" title="Remover Nível">
-                    <i class="ph ph-trash"></i>
-                </button>
-            `;
-            container.appendChild(div);
-        }
-
-        function remBatchLevel(index) {
-            const row = document.getElementById(`level-row-${index}`);
-            if (row) row.remove();
-        }
-
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando...';
             btn.disabled = true;
 
