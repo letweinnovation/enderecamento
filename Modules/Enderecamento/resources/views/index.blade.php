@@ -566,6 +566,7 @@
         }
 
         function clearFilters() {
+            sessionStorage.removeItem('enderecamentosState');
             clearSelectedTenant();
         }
 
@@ -577,7 +578,7 @@
         }
 
         // Search armazéns by tenant
-        async function searchEnderecos() {
+        async function searchEnderecos(autoExpandArmazemId = null) {
             const tenantId = document.getElementById('tenantId').value;
 
             if (!tenantId) {
@@ -625,6 +626,17 @@
 
                     document.getElementById('resultsBody').innerHTML = html;
                     document.getElementById('resultsTable').style.display = 'table';
+                    
+                    saveState();
+                    if (autoExpandArmazemId) {
+                        const rowToExpand = document.querySelector(`.main-row[onclick*="toggleArmazem(this, ${autoExpandArmazemId},"]`);
+                        if (rowToExpand) {
+                            toggleArmazem(rowToExpand, autoExpandArmazemId, tenantId);
+                            setTimeout(() => {
+                                rowToExpand.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 100);
+                        }
+                    }
                 } else {
                     document.getElementById('emptyState').innerHTML = `
                         <i class="ph ph-package"></i>
@@ -654,10 +666,12 @@
                 // Collapse
                 row.classList.remove('expanded');
                 subRow.classList.remove('show');
+                saveState(null);
             } else {
                 // Expand
                 row.classList.add('expanded');
                 subRow.classList.add('show');
+                saveState(armazemId);
                 
                 // Fetch if not already loaded
                 if (contentDiv.innerHTML.trim() === '') {
@@ -695,7 +709,7 @@
                                         <td>${end.indConsiderarCubagem ? (end.CUBAGEMPADRAO || '-') : '<span style="color:#cbd5e1">-</span>'}</td>
                                         <td>${formatStatus(end.regStatus)}</td>
                                         <td style="text-align: right;">
-                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" target="_blank" class="btn-ajustar">
+                                            <a href="/layout-fisico/${encodeURIComponent(tenantId)}/${armazemId}/${end.id}" class="btn-ajustar">
                                                 <i class="ph ph-tree-structure"></i> Ajustar Endereços
                                             </a>
                                         </td>
@@ -725,5 +739,33 @@
             }
             return '<span class="status-badge status-empty">-</span>';
         }
+
+        // State Management
+        function saveState(expandedArmazemId = null) {
+            if (typeof selectedTenantData === 'undefined' || !selectedTenantData) {
+                sessionStorage.removeItem('enderecamentosState');
+                return;
+            }
+            const state = {
+                tenant: selectedTenantData,
+                expandedArmazemId: expandedArmazemId
+            };
+            sessionStorage.setItem('enderecamentosState', JSON.stringify(state));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedStateStr = sessionStorage.getItem('enderecamentosState');
+            if (savedStateStr) {
+                try {
+                    const state = JSON.parse(savedStateStr);
+                    if (state.tenant && state.tenant.id) {
+                        selectTenant(state.tenant.id, state.tenant.name, state.tenant.domain);
+                        searchEnderecos(state.expandedArmazemId);
+                    }
+                } catch(e) {
+                    console.error('Failed to restore layout state:', e);
+                }
+            }
+        });
     </script>
 @endpush
