@@ -332,6 +332,44 @@
         .btn-copy-sql {
             position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;
         }
+        /* Draft Nodes */
+        .tree-node.draft-node > summary, .leaf-node.draft-node {
+            background-color: #ecfdf5;
+            border: 1px dashed #10b981;
+        }
+        
+        .draft-badge {
+            font-size: 0.7rem;
+            color: #10b981;
+            background: #d1fae5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Action Bar */
+        .action-bar-floating {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 1000;
+            border: 1px solid var(--border);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
     </style>
 @endpush
 
@@ -425,15 +463,14 @@
                     </div>
                 </div>
 
-                <div class="sql-output-container" id="sqlOutputContainer">
-                    <button class="btn-copy-sql" onclick="copySql()"><i class="ph ph-copy"></i> Copiar</button>
+                <div class="sql-output-container" id="sqlOutputContainer" style="display:none;">
                     <textarea id="sqlOutputContent" class="sql-textarea" readonly></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-tree-outline" onclick="closeWizzard()">Cancelar</button>
-                <button class="btn-ajustar" onclick="generateBatchSql()" id="btnGenerateSql" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto;">
-                    <i class="ph ph-code"></i> Retornar Script SQL
+                <button class="btn-ajustar" onclick="previewAndAddNodes()" id="btnGenerateSql" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto;">
+                    <i class="ph ph-magic-wand"></i> Injetar Previews
                 </button>
             </div>
         </div>
@@ -446,6 +483,38 @@
         </div>
         <div class="tree-root" id="treeRoot" style="display: none;"></div>
     </div>
+
+    <div id="actionBar" class="action-bar-floating" style="display: none;">
+        <span style="font-weight: 500; color: var(--text-main);">
+            <i class="ph ph-warning-circle" style="color: #f59e0b; font-size: 1.2rem; vertical-align: middle; margin-right: 0.25rem;"></i>
+            <span id="draftCount">0</span> modificação(ões) não salvas
+        </span>
+        <button class="btn-ajustar" onclick="consolidateNewNodes()" id="btnSaveFinal" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: 600;">
+            <i class="ph ph-floppy-disk"></i> Gravar Modificações
+        </button>
+    </div>
+
+    <!-- SQL Final Dialog -->
+    <div class="modal-overlay" id="sqlFinalModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="ph ph-check-circle" style="color: #10b981;"></i> Script Consolidado</h3>
+                <button class="modal-close" onclick="document.getElementById('sqlFinalModal').style.display='none'"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">O script abaixo processou as diferenças visuais geradas. Execute-o no banco de dados para efetivar as adições.</p>
+                <div class="sql-output-container" style="display:block;">
+                    <button class="btn-copy-sql" onclick="copyFinalSql()"><i class="ph ph-copy"></i> Copiar</button>
+                    <textarea id="sqlFinalContent" class="sql-textarea" readonly style="min-height: 250px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-ajustar" onclick="document.getElementById('sqlFinalModal').style.display='none'; location.reload();" style="background: var(--primary); width: 100%;">
+                    Avançar e Recarregar
+                </button>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -453,6 +522,8 @@
         const tenantId = '{{ $tenantId }}';
         const armazemId = '{{ $armazemId }}';
         const enderecamentoId = '{{ $enderecamentoId }}';
+
+        window.layoutFisicoData = [];
 
         document.addEventListener('DOMContentLoaded', fetchLayoutTree);
 
@@ -462,8 +533,10 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    const treeData = buildTree(result.data);
+                    window.layoutFisicoData = result.data;
+                    const treeData = buildTree(window.layoutFisicoData);
                     if (treeData) populateParentSelect(treeData);
+                    updateActionBar();
                 } else {
                     showError(result.message || 'Erro ao carregar árvore de layout.');
                 }
@@ -536,6 +609,9 @@
         }
 
         function generateNodeHtml(node) {
+            const draftClass = node.is_new ? 'draft-node' : '';
+            const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
+
             // Is it a leaf node? (No children or is explicitly enderecavel and has no children)
             if (node.children.length === 0) {
                 const isAliasSame = node.alias === node.nome;
@@ -548,11 +624,11 @@
                 const addBtnHtml = `<button class="btn-tree-add" onclick="openWizzard('${node.id}', '${node.nome}')" title="Gerar Filhos"><i class="ph ph-plus"></i></button>`;
 
                 return `
-                    <div class="leaf-node">
+                    <div class="leaf-node ${draftClass}">
                         <i class="ph ph-check-circle leaf-icon"></i>
                         <div class="leaf-info">
                             <div style="display:flex; align-items:center;">
-                                <strong class="node-title">${node.nome}</strong> ${formatado} ${aliasBadge} ${addBtnHtml}
+                                <strong class="node-title">${node.nome}</strong> ${draftBadge} ${formatado} ${aliasBadge} ${addBtnHtml}
                             </div>
                         </div>
                     </div>
@@ -568,11 +644,11 @@
             const addGrpBtnHtml = `<button class="btn-tree-add" onclick="event.preventDefault(); openWizzard('${node.id}', '${node.nome}')" title="Gerar Filhos"><i class="ph ph-plus"></i> Add</button>`;
 
             return `
-                <details class="tree-node">
+                <details class="tree-node ${draftClass}">
                     <summary class="tree-summary">
                         <i class="ph ph-caret-right node-icon"></i>
                         <i class="ph ph-folder" style="color: #64748b;"></i>
-                        <span class="node-title">${node.nome}</span>
+                        <span class="node-title">${node.nome}</span> ${draftBadge}
                         ${addGrpBtnHtml}
                     </summary>
                     ${childrenHtml}
@@ -611,7 +687,7 @@
             document.getElementById('wizzardModal').style.display = 'none';
         }
 
-        async function generateBatchSql() {
+        async function previewAndAddNodes() {
             const baseId = document.getElementById('wizParentId').value;
             const initValue = document.getElementById('wizInicio').value;
             const fimValue = document.getElementById('wizFim').value;
@@ -637,7 +713,10 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/enderecamentos/layout-fisico/generate-script', {
+                const parentNode = window.layoutFisicoData.find(n => String(n.id) === String(baseId));
+                const formatadoObj = parentNode ? parentNode.formatado : '';
+
+                const response = await fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -649,16 +728,18 @@
                         armazem_id: armazemId,
                         enderecamento_id: enderecamentoId,
                         base_parent_id: baseId,
+                        base_parent_format: formatadoObj,
                         niveis: payloadNiveis
                     })
                 });
                 const result = await response.json();
 
                 if (result.success) {
-                    document.getElementById('sqlOutputContainer').style.display = 'block';
-                    document.getElementById('sqlOutputContent').value = result.sql;
-                    document.getElementById('sqlOutputContent').scrollIntoView({ behavior: 'smooth' });
-                    showToast("Script gerado com sucesso!");
+                    window.layoutFisicoData = window.layoutFisicoData.concat(result.data);
+                    buildTree(window.layoutFisicoData);
+                    closeWizzard();
+                    updateActionBar();
+                    showToast("Rascunhos injetados com sucesso na árvore!");
                 } else {
                     alert('Erro: ' + result.message);
                 }
@@ -666,17 +747,69 @@
                 console.error('Error:', error);
                 alert("Falha de conexão.");
             } finally {
-                btn.innerHTML = '<i class="ph ph-code"></i> Retornar Script SQL';
+                btn.innerHTML = '<i class="ph ph-magic-wand"></i> Injetar Previews';
                 btn.disabled = false;
             }
         }
 
-        function copySql() {
-            const sqlText = document.getElementById('sqlOutputContent');
+        function updateActionBar() {
+            const draftNodes = window.layoutFisicoData.filter(n => n.is_new);
+            const bar = document.getElementById('actionBar');
+            if (draftNodes.length > 0) {
+                document.getElementById('draftCount').textContent = draftNodes.length;
+                bar.style.display = 'flex';
+            } else {
+                bar.style.display = 'none';
+            }
+        }
+
+        async function consolidateNewNodes() {
+            const draftNodes = window.layoutFisicoData.filter(n => n.is_new);
+            if(draftNodes.length === 0) return;
+
+            const btn = document.getElementById('btnSaveFinal');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Processando...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/enderecamentos/layout-fisico/generate-script', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        tenant_id: tenantId,
+                        armazem_id: armazemId,
+                        enderecamento_id: enderecamentoId,
+                        nodes: draftNodes
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('sqlFinalContent').value = result.sql;
+                    document.getElementById('sqlFinalModal').style.display = 'flex';
+                } else {
+                    alert('Erro: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Falha de conexão ao consolidar script.");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        function copyFinalSql() {
+            const sqlText = document.getElementById('sqlFinalContent');
             sqlText.select();
             sqlText.setSelectionRange(0, 999999); 
             document.execCommand("copy");
-            showToast("Script copiado! Atualize a página após aplicar o db.");
+            showToast("Script copiado! Atualize a página após executar no banco.");
             window.getSelection().removeAllRanges();
         }
 

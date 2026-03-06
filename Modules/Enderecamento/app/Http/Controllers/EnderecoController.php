@@ -188,38 +188,22 @@ class EnderecoController extends Controller
     }
 
     /**
-     * Generate SQL script for batch inserting physical layout addresses based on levels.
+     * Preview new nodes visually on the frontend tree without saving them yet.
      */
-    public function generateLayoutScript(Request $request)
+    public function previewNodes(Request $request)
     {
-        $tenantId = $request->input('tenant_id');
-        $armazemId = $request->input('armazem_id');
-        $enderecamentoId = $request->input('enderecamento_id');
         $niveis = $request->input('niveis', []);
         $baseParentId = $request->input('base_parent_id');
 
-        if (!$tenantId || !$armazemId || !$enderecamentoId || empty($niveis)) {
+        if (empty($niveis)) {
             return response()->json(['success' => false, 'message' => 'Parâmetros inválidos.']);
         }
 
         try {
-            $maxIdObj = DB::connection('gace')
-                ->table('layout_endereco_fisico')
-                ->selectRaw('MAX(ID) as max_id')
-                ->first();
+            $createdNodes = [];
             
-            $currentId = ($maxIdObj && $maxIdObj->max_id) ? (int)$maxIdObj->max_id + 1 : 1;
-            
-            $now = now()->format('Y-m-d H:i:s');
-            $userId = auth()->id() ?? 'system';
-
-            $sqlLines = [];
-            $sqlLines[] = "-- Script de Geração de Layout Físico em Lote";
-            $sqlLines[] = "-- Armazem ID: {$armazemId} | Enderecamento ID: {$enderecamentoId}";
-            $sqlLines[] = "-- Atenção: Valide os IDs antes de executar se houver acesso concorrente pesado ao WMS.";
-            $sqlLines[] = "BEGIN;";
-
-            $generateNodes = function($levelIndex, $parentId, $parentNameFormat) use (&$generateNodes, &$currentId, &$sqlLines, $niveis, $tenantId, $armazemId, $enderecamentoId, $now, $userId) {
+            // Gerador recursivo
+            $generateNodes = function($levelIndex, $parentId, $parentNameFormat) use (&$generateNodes, &$createdNodes, $niveis) {
                 if (!isset($niveis[$levelIndex])) {
                     return;
                 }
@@ -231,7 +215,7 @@ class EnderecoController extends Controller
                 
                 $padLength = 0;
                 if (strlen($inicio) > 1 && str_starts_with($inicio, '0')) {
-                    $padLength = strlen($inicio);
+                    $padLength = strlen($inicio); // Detecção nativa do painel original do usuario
                 }
 
                 if (is_numeric($inicio) && is_numeric($fim)) {
@@ -255,19 +239,27 @@ class EnderecoController extends Controller
                         $formatado = $parentNameFormat . $separador . $sigla;
                     }
                     
-                    $myId = $currentId++;
+                    $myId = 'draft_' . uniqid() . rand(100, 999);
                     
-                    $tipoComponente = (int)($nivel['tipo_componente'] ?? 1);
-                    
-                    // A última folha sempre será a endereçável
+                    // A última folha da ramificação em lote criada será a endereçável
                     $enderecavel = ($levelIndex === count($niveis) - 1) ? 1 : 0;
                     
-                    $parentVal = $parentId === null ? 'NULL' : $parentId;
+                    $node = [
+                        'id' => $myId,
+                        'parent_id' => $parentId === null ? null : (string)$parentId,
+                        'nome' => $sigla,
+                        'formatado' => $formatado,
+                        'alias' => $formatado,
+                        'enderecavel' => $enderecavel,
+                        'lado' => null,
+                        'max_cubagem' => null,
+                        'tipo_componente' => (int)($nivel['tipo_componente'] ?? 1),
+                        'is_new' => true,
+                    ];
+                    
+                    $createdNodes[] = $node;
 
-                    $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
-                        "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                        "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$formatado}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
-
+                    // Desce para o nível filho injetando este node draft como parentId
                     $generateNodes($levelIndex + 1, $myId, $formatado);
                 }
             };
@@ -275,7 +267,8 @@ class EnderecoController extends Controller
             $initialParentId = null;
             $initialParentFormat = '';
 
-            if ($baseParentId) {
+            // Se injetamos dentro de um nó existente, busca ele do DB pra herdar string e ID
+            if ($baseParentId && !str_starts_with((string)$baseParentId, 'draft_')) {
                 $baseParentObj = DB::connection('gace')
                     ->table('layout_endereco_fisico')
                     ->select('ENDERECO_FORMATADO')
@@ -286,9 +279,79 @@ class EnderecoController extends Controller
                     $initialParentId = $baseParentId;
                     $initialParentFormat = $baseParentObj->ENDERECO_FORMATADO;
                 }
+            } else if ($baseParentId && str_starts_with((string)$baseParentId, 'draft_')) {
+               // Em uma tree altamente conectada do frontend isso é preenchido manualmente
+               // Mas vamos exigir os root nodes base por ora ou pass formatado no request
+               $initialParentId = $baseParentId;
+               $initialParentFormat = $request->input('base_parent_format', '');
             }
 
             $generateNodes(0, $initialParentId, $initialParentFormat);
+
+            return response()->json([
+                'success' => true,
+                'data' => $createdNodes
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Layout Fisico Preview Error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao gerar preview.']);
+        }
+    }
+
+    /**
+     * Generate SQL script for batch inserting physical layout addresses based on levels.
+     */
+    public function generateLayoutScript(Request $request)
+    {
+        $tenantId = $request->input('tenant_id');
+        $armazemId = $request->input('armazem_id');
+        $enderecamentoId = $request->input('enderecamento_id');
+        $nodes = $request->input('nodes', []);
+
+        if (!$tenantId || !$armazemId || !$enderecamentoId || empty($nodes)) {
+            return response()->json(['success' => false, 'message' => 'Parâmetros inválidos.']);
+        }
+
+        try {
+            $maxIdObj = DB::connection('gace')
+                ->table('layout_endereco_fisico')
+                ->selectRaw('MAX(ID) as max_id')
+                ->first();
+            
+            $currentId = ($maxIdObj && $maxIdObj->max_id) ? (int)$maxIdObj->max_id + 1 : 1;
+            
+            $now = now()->format('Y-m-d H:i:s');
+            $userId = auth()->id() ?? 'system';
+
+            $sqlLines = [];
+            $sqlLines[] = "-- Script de Consolidação de Layout Físico Visual";
+            $sqlLines[] = "-- Armazem ID: {$armazemId} | Enderecamento ID: {$enderecamentoId}";
+            $sqlLines[] = "BEGIN;";
+
+            $draftToRealId = [];
+
+            foreach ($nodes as $node) {
+                $myId = $currentId++;
+                $draftToRealId[$node['id']] = $myId;
+                
+                $parentVal = 'NULL';
+                if (!empty($node['parent_id'])) {
+                    if (str_starts_with((string)$node['parent_id'], 'draft_')) {
+                        $parentVal = $draftToRealId[$node['parent_id']] ?? 'NULL';
+                    } else {
+                        $parentVal = $node['parent_id'];
+                    }
+                }
+                
+                $tipoComponente = isset($node['tipo_componente']) ? (int)$node['tipo_componente'] : 1;
+                $formatado = $node['formatado'];
+                $alias = $node['alias'] ?? $formatado;
+                $enderecavel = (isset($node['enderecavel']) && $node['enderecavel']) ? 1 : 0;
+                
+                $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
+                    "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
+                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
+            }
 
             $sqlLines[] = "COMMIT;";
 
@@ -298,7 +361,7 @@ class EnderecoController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Layout Fisico Batch Generate Error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Erro ao gerar script SQL.']);
+            return response()->json(['success' => false, 'message' => 'Erro ao gerar script SQL consolidado.']);
         }
     }
 }
