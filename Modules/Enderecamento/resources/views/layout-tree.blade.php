@@ -482,6 +482,12 @@
             <span>Carregando árvore de endereços...</span>
         </div>
         <div class="tree-root" id="treeRoot" style="display: none;"></div>
+        
+        <div id="treeEmptyState" style="display: none; color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
+            <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
+            <strong>Esta estrutura não possui Layout Físico gerado</strong><br><br>
+            <button class="btn-ajustar" onclick="openWizzard('')" style="margin-top: 1rem;"><i class="ph ph-plus"></i> Gerar Primeira Rua na Raiz</button>
+        </div>
     </div>
 
     <div id="actionBar" class="action-bar-floating" style="display: none;">
@@ -548,9 +554,18 @@
 
         function buildTree(flatData) {
             const rootEl = document.getElementById('treeRoot');
+            const emptyEl = document.getElementById('treeEmptyState');
             
             // Empty State Safety Check
             if (!flatData || !Array.isArray(flatData) || flatData.length === 0) {
+                document.getElementById('treeLoading').style.display = 'none';
+                rootEl.style.display = 'none';
+                emptyEl.style.display = 'block';
+                return [];
+            }
+
+            emptyEl.style.display = 'none';
+            // ... resto do código 
                 rootEl.innerHTML = `
                     <div style="color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
                         <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
@@ -587,18 +602,23 @@
 
             // 3) Render HTML recursively
             if (roots.length === 0) {
-                rootEl.innerHTML = `
-                    <div style="color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
-                        <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
-                        <strong>Esta estrutura não possui Layout Físico gerado</strong><br><br>
-                        Clique em <span style="color: var(--primary);">Gerar na Raiz</span> acima para criar os primeiros corredores e ruas.
-                    </div>
-                `;
+                rootEl.style.display = 'none';
+                emptyEl.style.display = 'block';
             } else {
                 let html = '';
                 roots.forEach(r => {
                     html += generateNodeHtml(r);
                 });
+                
+                // Botão Adicional na base da árvore para Criar Raiz
+                html += `
+                    <div style="margin-top: 1rem; margin-left: 24px;">
+                        <button class="btn-tree-outline" onclick="openWizzard('')" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #cbd5e1; color: var(--text-main); background: #f8fafc; border-style: dashed;">
+                            <i class="ph ph-plus"></i> Adicionar nova raiz
+                        </button>
+                    </div>
+                `;
+                
                 rootEl.innerHTML = html;
             }
 
