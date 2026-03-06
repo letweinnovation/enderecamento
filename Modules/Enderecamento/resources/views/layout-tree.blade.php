@@ -463,6 +463,13 @@
                     </div>
                 </div>
 
+                <div class="simple-input-group" id="wizReplicateContainer" style="display:none; margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; color: var(--text-main); font-size: 0.9rem;">
+                        <input type="checkbox" id="wizReplicateSiblings" style="width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: var(--primary);">
+                        Replicar criação para todos os nós Irmãos (mesmo nível)
+                    </label>
+                </div>
+
                 <div class="sql-output-container" id="sqlOutputContainer" style="display:none;">
                     <textarea id="sqlOutputContent" class="sql-textarea" readonly></textarea>
                 </div>
@@ -684,8 +691,23 @@
             
             if (baseParentId !== '') {
                 document.getElementById('wizzardSubtitle').innerHTML = `Instanciando Nível-Filho para herdar dinamicamente o nó <strong style="color:var(--primary)">${parentName}</strong>.`;
+                
+                // Exibe checkbox de replicação se houver irmãos
+                const parentNode = window.layoutFisicoData.find(n => String(n.id) === String(baseParentId));
+                if (parentNode) {
+                    const siblings = window.layoutFisicoData.filter(n => n.parent_id === parentNode.parent_id && String(n.id) !== String(baseParentId));
+                    if(siblings.length > 0) {
+                        document.getElementById('wizReplicateContainer').style.display = 'block';
+                        document.getElementById('wizReplicateSiblings').checked = false;
+                    } else {
+                        document.getElementById('wizReplicateContainer').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('wizReplicateContainer').style.display = 'none';
+                }
             } else {
                 document.getElementById('wizzardSubtitle').innerHTML = `Injetando um Nível diretamente na Raiz Principal da árvore.`;
+                document.getElementById('wizReplicateContainer').style.display = 'none';
             }
 
             document.getElementById('wizzardModal').style.display = 'flex';
@@ -723,37 +745,60 @@
             try {
                 const parentNode = window.layoutFisicoData.find(n => String(n.id) === String(baseId));
                 const formatadoObj = parentNode ? parentNode.formatado : '';
+                
+                const replicateCheck = document.getElementById('wizReplicateSiblings') && document.getElementById('wizReplicateSiblings').checked;
 
-                const response = await fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json', 
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        tenant_id: tenantId,
-                        armazem_id: armazemId,
-                        enderecamento_id: enderecamentoId,
-                        base_parent_id: baseId,
-                        base_parent_format: formatadoObj,
-                        niveis: payloadNiveis
-                    })
+                let targets = [{id: baseId, formatado: formatadoObj}];
+
+                if (replicateCheck && parentNode) {
+                    const siblings = window.layoutFisicoData.filter(n => n.parent_id === parentNode.parent_id);
+                    targets = siblings.map(s => ({id: s.id, formatado: s.formatado}));
+                }
+
+                const promises = targets.map(target => {
+                    return fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            tenant_id: tenantId,
+                            armazem_id: armazemId,
+                            enderecamento_id: enderecamentoId,
+                            base_parent_id: target.id,
+                            base_parent_format: target.formatado,
+                            niveis: payloadNiveis
+                        })
+                    }).then(r => r.json());
                 });
-                const result = await response.json();
 
-                if (result.success) {
-                    window.layoutFisicoData = window.layoutFisicoData.concat(result.data);
+                const results = await Promise.all(promises);
+
+                let allSuccess = true;
+                let errorMsg = '';
+                results.forEach(res => {
+                    if (res.success) {
+                        window.layoutFisicoData = window.layoutFisicoData.concat(res.data);
+                    } else {
+                        allSuccess = false;
+                        errorMsg = res.message;
+                    }
+                });
+
+                if (allSuccess || window.layoutFisicoData.length > 0) {
                     buildTree(window.layoutFisicoData);
                     closeWizzard();
                     updateActionBar();
                     showToast("Rascunhos injetados com sucesso na árvore!");
+                    if(!allSuccess) alert("Atenção: Alguns nós falharam ao replicar.");
                 } else {
-                    alert('Erro: ' + result.message);
+                    alert('Erro generalizado: ' + errorMsg);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert("Falha de conexão.");
+                alert("Falha de conexão ao simular nós.");
             } finally {
                 btn.innerHTML = '<i class="ph ph-magic-wand"></i> Injetar Previews';
                 btn.disabled = false;
