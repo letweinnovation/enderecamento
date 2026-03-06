@@ -411,8 +411,15 @@
     <!-- Batch Generator Panel -->
     <div class="batch-panel" id="batchPanel">
         <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Gerar Layout Físico em Lote</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Crie níveis de endereços (ex: Ruas, Vãos, Posições). Defina os intervalos numéricos ou letras (A-Z) para cada subnível. A ferramenta irá construir a árvore gerando um Script SQL de <code>INSERT</code> puro.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Adicione níveis estruturais de endereços. A última folha sempre será marcada automaticamente como <strong>Endereçável</strong>. Para adicionar posições a uma estrutura que já existe, selecione um Nó Pai abaixo.</p>
         
+        <div style="margin-bottom: 1.5rem;">
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.5rem; color: var(--text-main);">Nó Pai Existente (Opcional):</label>
+            <select id="baseParentId" style="width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+                <option value="">-- Raiz (Nenhum) --</option>
+            </select>
+        </div>
+
         <div id="levelsContainer"></div>
         
         <button class="btn-add-level" onclick="addBatchLevel()">
@@ -611,13 +618,8 @@
                     <input type="number" class="level-casas" value="2" min="1" max="10">
                 </div>
                 <div class="batch-input-group">
-                    <label>Config Final</label>
-                    <div style="display:flex; gap: 0.5rem;">
-                        <input type="text" class="level-separador" placeholder="Sep: -" value="-" style="width: 50%" title="Separador do nível anterior">
-                        <label style="display:flex; align-items:center; gap: 4px; white-space:nowrap; cursor:pointer;">
-                            <input type="checkbox" class="level-enderecavel"> Endereçável?
-                        </label>
-                    </div>
+                    <label>Separador</label>
+                    <input type="text" class="level-separador" placeholder="Ex: -" value="-" title="Separador do nível anterior">
                 </div>
                 <button class="btn-remove-level" onclick="remBatchLevel(${index})" title="Remover Nível">
                     <i class="ph ph-trash"></i>
@@ -647,10 +649,11 @@
                     fim: row.querySelector('.level-fim').value,
                     sufixo: row.querySelector('.level-sufixo').value,
                     casas_decimais: parseInt(row.querySelector('.level-casas').value || 0),
-                    separador: row.querySelector('.level-separador').value,
-                    enderecavel: row.querySelector('.level-enderecavel').checked
+                    separador: row.querySelector('.level-separador').value
                 });
             });
+
+            const baseParentId = document.getElementById('baseParentId').value;
 
             const btn = document.getElementById('btnGenerateSql');
             btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando SQL...';
@@ -668,6 +671,7 @@
                         tenant_id: tenantId,
                         armazem_id: armazemId,
                         enderecamento_id: enderecamentoId,
+                        base_parent_id: baseParentId,
                         niveis: payloadNiveis
                     })
                 });
@@ -700,6 +704,37 @@
         }
 
         // ==========================================
+        
+        function populateParentSelect(items, indent = '') {
+            const select = document.getElementById('baseParentId');
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.text = `${indent}${item.nome}`;
+                select.appendChild(opt);
+                if (item.children && item.children.length > 0) {
+                    populateParentSelect(item.children, indent + '— ');
+                }
+            });
+        }
+
+        async function loadTree() {
+            try {
+                const response = await fetch(`/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const treeData = buildTree(result.data);
+                    renderTree(treeData);
+                    populateParentSelect(treeData);
+                } else {
+                    showError(result.message || 'Erro ao carregar árvore de layout.');
+                }
+            } catch (error) {
+                console.error('Network Error:', error);
+                showError('Falha de conexão com o servidor ao carregar Layout Físico.');
+            }
+        }
         
         function showError(msg) {
             document.getElementById('treeContainer').innerHTML = `

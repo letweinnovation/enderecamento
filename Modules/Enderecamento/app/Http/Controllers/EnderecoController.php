@@ -196,6 +196,7 @@ class EnderecoController extends Controller
         $armazemId = $request->input('armazem_id');
         $enderecamentoId = $request->input('enderecamento_id');
         $niveis = $request->input('niveis', []);
+        $baseParentId = $request->input('base_parent_id');
 
         if (!$tenantId || !$armazemId || !$enderecamentoId || empty($niveis)) {
             return response()->json(['success' => false, 'message' => 'Parâmetros inválidos.']);
@@ -252,7 +253,10 @@ class EnderecoController extends Controller
                     $myId = $currentId++;
                     
                     $tipoComponente = (int)($nivel['tipo_componente'] ?? 1);
-                    $enderecavel = (!empty($nivel['enderecavel']) && filter_var($nivel['enderecavel'], FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
+                    
+                    // A última folha sempre será a endereçável
+                    $enderecavel = ($levelIndex === count($niveis) - 1) ? 1 : 0;
+                    
                     $parentVal = $parentId === null ? 'NULL' : $parentId;
 
                     $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
@@ -263,7 +267,23 @@ class EnderecoController extends Controller
                 }
             };
 
-            $generateNodes(0, null, '');
+            $initialParentId = null;
+            $initialParentFormat = '';
+
+            if ($baseParentId) {
+                $baseParentObj = DB::connection('gace')
+                    ->table('layout_endereco_fisico')
+                    ->select('ENDERECO_FORMATADO')
+                    ->where('ID', $baseParentId)
+                    ->first();
+                
+                if ($baseParentObj) {
+                    $initialParentId = $baseParentId;
+                    $initialParentFormat = $baseParentObj->ENDERECO_FORMATADO;
+                }
+            }
+
+            $generateNodes(0, $initialParentId, $initialParentFormat);
 
             $sqlLines[] = "COMMIT;";
 
