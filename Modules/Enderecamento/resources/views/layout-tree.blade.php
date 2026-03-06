@@ -462,13 +462,14 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    buildTree(result.data);
+                    const treeData = buildTree(result.data);
+                    if (treeData) populateParentSelect(treeData);
                 } else {
-                    showError(result.message || 'Erro ao carregar árvore.');
+                    showError(result.message || 'Erro ao carregar árvore de layout.');
                 }
             } catch (error) {
-                console.error('Error fetching layout:', error);
-                showError('Falha de conexão ao buscar árvore.');
+                console.error('Network Error:', error);
+                showError('Falha de conexão com o servidor ao carregar Layout Físico.');
             }
         }
 
@@ -498,7 +499,13 @@
 
             // 3) Render HTML recursively
             if (roots.length === 0) {
-                rootEl.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">Nenhum endereço encontrado para este layout.</div>';
+                rootEl.innerHTML = `
+                    <div style="color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
+                        <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
+                        <strong>Esta estrutura não possui Layout Físico gerado</strong><br><br>
+                        Clique em <span style="color: var(--primary);">Gerar na Raiz</span> acima para criar os primeiros corredores e ruas.
+                    </div>
+                `;
             } else {
                 let html = '';
                 roots.forEach(r => {
@@ -509,6 +516,8 @@
 
             document.getElementById('treeLoading').style.display = 'none';
             rootEl.style.display = 'block';
+
+            return roots;
         }
 
         function generateNodeHtml(node) {
@@ -654,22 +663,19 @@
 
         // ==========================================
         
-        async function loadTree() {
-            try {
-                const response = await fetch(`/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    const treeData = buildTree(result.data);
-                    renderTree(treeData);
-                    populateParentSelect(treeData);
-                } else {
-                    showError(result.message || 'Erro ao carregar árvore de layout.');
+        function populateParentSelect(items, indent = '') {
+            const select = document.getElementById('baseParentId');
+            if(!select) return;
+
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.text = `${indent}${item.nome}`;
+                select.appendChild(opt);
+                if (item.children && item.children.length > 0) {
+                    populateParentSelect(item.children, indent + '— ');
                 }
-            } catch (error) {
-                console.error('Network Error:', error);
-                showError('Falha de conexão com o servidor ao carregar Layout Físico.');
-            }
+            });
         }
         
         function showError(msg) {
