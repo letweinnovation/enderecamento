@@ -458,6 +458,9 @@
                     <i class="ph ph-caret-double-up"></i>
                 </button>
             </div>
+            <button class="btn-back" style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; border: none;" onclick="openHelpModal()" title="Ajuda / Como Usar">
+                <i class="ph ph-question" style="font-size: 1.5rem;"></i>
+            </button>
         </div>
     </div>
 
@@ -531,6 +534,37 @@
         <button class="btn-save-final" onclick="consolidateNewNodes()" id="btnSaveFinal">
             <i class="ph ph-cloud-arrow-up"></i> Gravar Modificações
         </button>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-card glass-card" style="max-width: 600px; background: white !important;">
+            <div class="modal-header">
+                <h3 style="margin:0; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="ph ph-info"></i> Guia Rápido de Uso
+                </h3>
+            </div>
+            <div class="modal-body" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                <div style="margin-bottom: 1.5rem;">
+                    <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.5rem;">🚀 Adição Relâmpago (Skeleton Nodes)</strong>
+                    <p>Ao final de cada nível, existe um campo <strong>"Novo nível..."</strong>. Digite o nome e aperte <code>Enter</code> para adicionar instantaneamente. O foco irá para o próximo campo automaticamente.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.5rem;">👯 Replicação Visual (Clonagem)</strong>
+                    <p>Clique no ícone <i class="ph ph-copy"></i> em um nó com estrutura de filhos. Clique nos outros nós do mesmo nível para selecionar os destinos e confirme no painel que aparecerá no topo.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <strong style="color: var(--primary-dark); display: block; margin-bottom: 0.5rem;">⚙️ Controles de Árvore</strong>
+                    <p>Use os botões <i class="ph ph-caret-double-down"></i> e <i class="ph ph-caret-double-up"></i> no cabeçalho para expandir ou recolher toda a estrutura de uma vez.</p>
+                </div>
+                <div style="padding: 1rem; background: #f0fdf4; border-radius: 12px; color: #166534; font-size: 0.85rem;">
+                    <i class="ph ph-warning-circle"></i> <strong>Lembre-se:</strong> Suas alterações ficam como "Rascunho". Clique em <strong>"Gravar Modificações"</strong> no rodapé para efetivar os dados.
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid var(--border);">
+                <button class="btn-save-final" style="width: 100%;" onclick="closeHelpModal()">Entendi, vamos lá!</button>
+            </div>
+        </div>
     </div>
 
     <!-- SQL Final Dialog -->
@@ -937,6 +971,14 @@
 
         function showToast(msg) {
             alert(msg);
+        }
+
+        function openHelpModal() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').style.display = 'none';
         }
     </script>
 @endpush
