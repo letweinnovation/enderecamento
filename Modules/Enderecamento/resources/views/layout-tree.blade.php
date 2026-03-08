@@ -895,10 +895,10 @@
         function handleNodeClick(nodeId) {
             if (!selectionMode) return;
             
-            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
             const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
             
-            if (node.parent_id !== source.parent_id || node.id === source.id) return;
+            // Allow cloning to any node except itself
+            if (node.id === source.id) return;
 
             const idx = selectedTargets.indexOf(nodeId);
             const el = document.getElementById('node_' + nodeId);
@@ -1004,9 +1004,9 @@
             document.getElementById('selectionOverlay').style.display = 'flex';
             document.getElementById('selectedCount').textContent = '0';
 
-            // Highlight possible targets (siblings)
+            // Highlight possible targets (any node except the source)
             window.layoutData.forEach(node => {
-                if (node.parent_id === source.parent_id && node.id !== source.id) {
+                if (String(node.id) !== String(sourceId)) {
                     const el = document.getElementById('node_' + node.id);
                     if (el) {
                         const summary = el.querySelector('.tree-summary') || el;
