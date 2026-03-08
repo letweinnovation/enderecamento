@@ -833,36 +833,50 @@
         }
 
         function addNodeInLine(parentId, name) {
-            let baseFormat = '';
             let parentNode = null;
-            
             if (parentId) {
                 parentNode = window.layoutData.find(n => String(n.id) === String(parentId));
-                if (parentNode) baseFormat = parentNode.formatado;
             }
 
-            // 1. Contextual Validation: "Fazer sentido com o pai"
-            // If we have a parent, we expect the name to follow the parent's name pattern
-            // Or we auto-prefix it if the user only typed the suffix.
+            // 1. Strict Contextual Validation: "Fazer sentido com o pai"
             let finalName = name;
             if (parentNode) {
                 const prefix = parentNode.nome + '-';
-                if (!name.startsWith(prefix)) {
-                    // If user didn't type the prefix, we add it. 
-                    // This prevents "03-03" being added under "02".
+                
+                if (name.includes('-')) {
+                    // If user manually typed a dash, it MUST start with parent prefix
+                    if (!name.startsWith(prefix)) {
+                        alert(`Erro: Entrada inválida. Para o pai "${parentNode.nome}", o nome deve começar com "${prefix}".`);
+                        return;
+                    }
+                } else {
+                    // If user only typed a suffix (no dash), we auto-prefix it
                     finalName = prefix + name;
+                }
+            } else {
+                // If it's a root node, we don't allow dashes initially to keep it clean, 
+                // OR we just accept it if it's the top level.
+                if (name.includes('-')) {
+                    alert('Erro: Níveis raiz não devem conter o caractere "-" manualmente.');
+                    return;
                 }
             }
 
             // 2. Uniqueness Check: "Nao pode duplicar"
-            const siblings = window.layoutData.filter(n => String(n.parent_id) === String(parentId));
-            if (siblings.some(s => s.nome.toLowerCase() === finalName.toLowerCase())) {
+            const exists = window.layoutData.some(n => 
+                String(n.parent_id) === String(parentId) && 
+                n.nome.toLowerCase() === finalName.toLowerCase()
+            );
+            
+            if (exists) {
                 alert(`Erro: O nome "${finalName}" já existe neste nível.`);
                 return;
             }
 
             const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
-            const formatado = baseFormat ? baseFormat + '-' + (finalName.includes('-') ? finalName.split('-').pop() : finalName) : finalName;
+            const baseFormat = parentNode ? parentNode.formatado : '';
+            const suffix = finalName.includes('-') ? finalName.split('-').pop() : finalName;
+            const formatado = baseFormat ? baseFormat + '-' + suffix : finalName;
 
             const newNode = {
                 id: newId,
@@ -875,10 +889,8 @@
 
             window.layoutData.push(newNode);
             
-            // Re-render and restore focus to the skeleton input
             renderTree();
             focusOnSkeleton(parentId);
-            
             updateUIStats();
         }
 
