@@ -834,29 +834,52 @@
 
         function addNodeInLine(parentId, name) {
             let baseFormat = '';
+            let parentNode = null;
+            
             if (parentId) {
-                const p = window.layoutData.find(n => String(n.id) === String(parentId));
-                if (p) baseFormat = p.formatado;
+                parentNode = window.layoutData.find(n => String(n.id) === String(parentId));
+                if (parentNode) baseFormat = parentNode.formatado;
+            }
+
+            // 1. Contextual Validation: "Fazer sentido com o pai"
+            // If we have a parent, we expect the name to follow the parent's name pattern
+            // Or we auto-prefix it if the user only typed the suffix.
+            let finalName = name;
+            if (parentNode) {
+                const prefix = parentNode.nome + '-';
+                if (!name.startsWith(prefix)) {
+                    // If user didn't type the prefix, we add it. 
+                    // This prevents "03-03" being added under "02".
+                    finalName = prefix + name;
+                }
+            }
+
+            // 2. Uniqueness Check: "Nao pode duplicar"
+            const siblings = window.layoutData.filter(n => String(n.parent_id) === String(parentId));
+            if (siblings.some(s => s.nome.toLowerCase() === finalName.toLowerCase())) {
+                alert(`Erro: O nome "${finalName}" já existe neste nível.`);
+                return;
             }
 
             const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
-            const formatado = baseFormat ? baseFormat + '-' + name : name;
+            const formatado = baseFormat ? baseFormat + '-' + (finalName.includes('-') ? finalName.split('-').pop() : finalName) : finalName;
 
             const newNode = {
                 id: newId,
                 parent_id: parentId || null,
-                nome: name,
+                nome: finalName,
                 formatado: formatado,
                 is_new: true,
-                is_enderecavel: false // Default to false for now, logic can be added later
+                is_enderecavel: false
             };
 
             window.layoutData.push(newNode);
-            renderTree();
-            updateUIStats();
             
-            // Re-focus skeleton for next add
-            setTimeout(() => focusOnSkeleton(parentId), 50);
+            // Re-render and restore focus to the skeleton input
+            renderTree();
+            focusOnSkeleton(parentId);
+            
+            updateUIStats();
         }
 
         function toggleSelectionMode(sourceId) {
