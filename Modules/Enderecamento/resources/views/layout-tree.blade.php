@@ -424,6 +424,54 @@
             border-bottom: 1px solid var(--border);
         }
 
+        /* Filter Switch Styles */
+        .filter-switch {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            gap: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .filter-switch:hover { background: #e2e8f0; }
+
+        .filter-switch input { opacity: 0; width: 0; height: 0; }
+
+        .filter-slider {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .filter-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .filter-slider { background-color: var(--primary); }
+        input:checked + .filter-slider:before { transform: translateX(16px); }
+
+        .filter-switch i {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        input:checked ~ i { color: var(--primary); }
+
         /* --- MOBILE RESPONSIVENESS (iPhone) --- */
         @media (max-width: 768px) {
             .layout-header {
@@ -539,7 +587,13 @@
         <!-- Tree Controls relocated here for better UX -->
         <div class="tree-controls">
             <span style="font-weight: 700; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Visualização da Árvore</span>
-            <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 10px;">
+            <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 10px; align-items: center;">
+                <label class="filter-switch" title="Mostrar apenas rascunhos">
+                    <input type="checkbox" id="chkOnlyDrafts" onchange="renderTree()">
+                    <span class="filter-slider"></span>
+                    <i class="ph ph-magic-wand"></i>
+                </label>
+                <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 0.25rem;"></div>
                 <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="expandAllNodes()" title="Expandir Tudo">
                     <i class="ph ph-caret-double-down"></i>
                 </button>
@@ -690,6 +744,7 @@
             const root = document.getElementById('treeRoot');
             const loading = document.getElementById('treeLoading');
             const empty = document.getElementById('treeEmptyState');
+            const onlyDrafts = document.getElementById('chkOnlyDrafts')?.checked || false;
 
             // Capture open states before rendering
             const openStates = {};
@@ -705,6 +760,29 @@
                 return;
             }
 
+            // Filtering Logic
+            let activeNodes = window.layoutData;
+            if (onlyDrafts) {
+                const draftPathIds = new Set();
+                window.layoutData.forEach(n => {
+                    if (n.is_new) {
+                        let curr = n;
+                        while(curr) {
+                            draftPathIds.add(String(curr.id));
+                            curr = window.layoutData.find(parent => String(parent.id) === String(curr.parent_id));
+                        }
+                    }
+                });
+                activeNodes = window.layoutData.filter(n => draftPathIds.has(String(n.id)));
+            }
+
+            if (activeNodes.length === 0 && onlyDrafts) {
+                root.innerHTML = '<div style="text-align:center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">Nenhuma alteração pendente para filtrar.</div>';
+                root.style.display = 'block';
+                empty.style.display = 'none';
+                return;
+            }
+
             empty.style.display = 'none';
             root.style.display = 'block';
 
@@ -712,14 +790,14 @@
             const map = {};
             const forest = [];
 
-            window.layoutData.forEach(n => {
+            activeNodes.forEach(n => {
                 map[n.id] = { ...n, children: [] };
             });
 
-            window.layoutData.forEach(n => {
+            activeNodes.forEach(n => {
                 if (n.parent_id && map[n.parent_id]) {
                     map[n.parent_id].children.push(map[n.id]);
-                } else {
+                } else if (!n.parent_id || !activeNodes.find(p => String(p.id) === String(n.parent_id))) {
                     forest.push(map[n.id]);
                 }
             });
@@ -729,13 +807,15 @@
                 html += generateTreeHtml(rootNode);
             });
             
-            // Add root skeleton
-            html += `
-                <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('')">
-                    <i class="ph ph-plus"></i>
-                    <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '')" id="skeleton_">
-                </div>
-            `;
+            // Add root skeleton ONLY if not filtering
+            if (!onlyDrafts) {
+                html += `
+                    <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('')">
+                        <i class="ph ph-plus"></i>
+                        <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '')" id="skeleton_">
+                    </div>
+                `;
+            }
 
             root.innerHTML = html;
 
@@ -744,6 +824,11 @@
                 const el = document.getElementById(id);
                 if (el) el.open = openStates[id];
             });
+
+            // If filtering, force open all paths to drafts
+            if (onlyDrafts) {
+                document.querySelectorAll('details').forEach(d => d.open = true);
+            }
         }
 
         function generateTreeHtml(node) {
