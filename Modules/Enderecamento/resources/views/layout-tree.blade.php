@@ -619,23 +619,17 @@
                 <i class="ph ph-caret-right"></i> <strong>{{ $enderecamento->Formatacao ?? $enderecamento->Descricao ?? 'Endereçamento' }}</strong>
             </div>
         </div>
-        <div style="margin-left: auto;">
+        <div style="margin-left: auto; display: flex; gap: 1rem;">
+            <button class="btn-smart-generate" onclick="openSmartGenerator('')" style="background: white; color: var(--primary); border: 1px solid var(--primary);">
+                <i class="ph ph-plus-circle"></i> Novo Nível Principal
+            </button>
             <button class="btn-smart-generate" onclick="openSmartGenerator('')">
                 <i class="ph ph-sparkle"></i> Gerador Inteligente
             </button>
         </div>
     </div>
 
-    <div class="info-cards">
-        <div class="info-card glass-card">
-            <div class="info-card-icon">
-                <i class="ph ph-stack"></i>
-            </div>
-            <div class="info-card-text">
-                <span class="info-card-label">Modo de Operação</span>
-                <span class="info-card-value">Composite Layout</span>
-            </div>
-        </div>
+    <div class="info-cards" style="grid-template-columns: repeat(2, 1fr);">
         <div class="info-card glass-card">
             <div class="info-card-icon" style="background: #fef3c7; color: #d97706;">
                 <i class="ph ph-tree-structure"></i>
@@ -876,7 +870,12 @@
                         <span style="font-weight: 600;">${node.nome}</span>
                         <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                         ${draftBadge}
-                        ${addBtn}
+                        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                            <button class="btn-inline-add" style="background: #f8fafc; color: #64748b;" onclick="event.preventDefault(); cloneStructure('${node.id}')" title="Clonar Estrutura">
+                                <i class="ph ph-copy"></i>
+                            </button>
+                            ${addBtn}
+                        </div>
                     </summary>
                     ${kidsHtml}
                 </details>
@@ -1149,6 +1148,91 @@
         function showToast(msg) {
             // Simplified toast for now, can be improved with a real library
             alert(msg);
+        }
+
+        async function cloneStructure(sourceId) {
+            const source = window.layoutData.find(n => String(n.id) === String(sourceId));
+            if (!source) return;
+
+            // Find siblings
+            const siblings = window.layoutData.filter(n => n.parent_id === source.parent_id && n.id !== source.id);
+            if (siblings.length === 0) {
+                alert("Não há irmãos para replicar esta estrutura.");
+                return;
+            }
+
+            const targetNames = prompt("Para quais as outras posições deste nível você deseja replicar a estrutura? Descreva os nomes separados por vírgula ou deixe vazio para ver a lista de irmãos disponíveis.\nEx: 03, 04, 05");
+            
+            if (targetNames === null) return; // Cancelled
+
+            let targets = [];
+            if (targetNames.trim() === "") {
+                const list = siblings.map(s => s.nome).join(", ");
+                alert("Irmãos disponíveis: " + list);
+                return;
+            } else {
+                const names = targetNames.split(",").map(n => n.trim().toLowerCase());
+                targets = siblings.filter(s => names.includes(s.nome.toLowerCase()));
+            }
+
+            if (targets.length === 0) {
+                alert("Nenhuma posição alvo correspondente encontrada.");
+                return;
+            }
+
+            // Find all descendants of source
+            const children = findDescendants(sourceId);
+            if (children.length === 0) {
+                alert("Este nível não possui estrutura de filhos para clonar.");
+                return;
+            }
+
+            // Replicate structure for each target
+            let newDrafts = [];
+            targets.forEach(t => {
+                const clones = replicateChildren(sourceId, t.id, t.formatado);
+                newDrafts = newDrafts.concat(clones);
+            });
+
+            window.layoutData = window.layoutData.concat(newDrafts);
+            renderTree();
+            updateUIStats();
+            showToast(`Estrutura replicada para ${targets.length} posições!`);
+        }
+
+        function findDescendants(parentId) {
+            let results = [];
+            const kids = window.layoutData.filter(n => String(n.parent_id) === String(parentId));
+            kids.forEach(k => {
+                results.push(k);
+                results = results.concat(findDescendants(k.id));
+            });
+            return results;
+        }
+
+        function replicateChildren(sourceParentId, targetParentId, targetBaseFormat) {
+            let clones = [];
+            const kids = window.layoutData.filter(n => String(n.parent_id) === String(sourceParentId));
+            
+            kids.forEach(k => {
+                const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
+                const newFormat = targetBaseFormat ? targetBaseFormat + '-' + k.nome : k.nome;
+                
+                const clone = {
+                    ...k,
+                    id: newId,
+                    parent_id: targetParentId,
+                    formatado: newFormat,
+                    is_new: true
+                };
+                clones.push(clone);
+                
+                // Recursive call for sub-children
+                const subClones = replicateChildren(k.id, newId, newFormat);
+                clones = clones.concat(subClones);
+            });
+            
+            return clones;
         }
     </script>
 @endpush
