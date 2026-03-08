@@ -383,6 +383,47 @@
             opacity: 1;
         }
 
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-card {
+            width: 100%;
+            background: white !important;
+            border-radius: 24px;
+            overflow: hidden;
+            animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
+        .modal-body { padding: 2rem; }
+        .modal-footer { padding: 1.5rem 2rem; }
+
+        /* Tree Controls Header */
+        .tree-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
         /* --- MOBILE RESPONSIVENESS (iPhone) --- */
         @media (max-width: 768px) {
             .layout-header {
@@ -450,15 +491,7 @@
             </div>
         </div>
         <div style="margin-left: auto; display: flex; gap: 0.75rem; align-items: center;">
-            <div class="glass-card" style="display: flex; gap: 0.5rem; padding: 0.5rem; border-radius: 12px; border: 1px solid var(--primary);">
-                <button class="btn-back" style="width: 36px; height: 36px; border-radius: 8px; border: none; box-shadow: none; color: var(--primary);" onclick="expandAllNodes()" title="Expandir Tudo">
-                    <i class="ph ph-caret-double-down"></i>
-                </button>
-                <button class="btn-back" style="width: 36px; height: 36px; border-radius: 8px; border: none; box-shadow: none; color: var(--primary);" onclick="collapseAllNodes()" title="Recolher Tudo">
-                    <i class="ph ph-caret-double-up"></i>
-                </button>
-            </div>
-            <button class="btn-back" style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; border: none;" onclick="openHelpModal()" title="Ajuda / Como Usar">
+            <button class="btn-back" style="width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer;" onclick="openHelpModal()" title="Ajuda / Como Usar">
                 <i class="ph ph-question" style="font-size: 1.5rem;"></i>
             </button>
         </div>
@@ -503,6 +536,19 @@
     </div>
 
     <div class="tree-container glass-card" id="treeContainer">
+        <!-- Tree Controls relocated here for better UX -->
+        <div class="tree-controls">
+            <span style="font-weight: 700; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Visualização da Árvore</span>
+            <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 10px;">
+                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="expandAllNodes()" title="Expandir Tudo">
+                    <i class="ph ph-caret-double-down"></i>
+                </button>
+                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="collapseAllNodes()" title="Recolher Tudo">
+                    <i class="ph ph-caret-double-up"></i>
+                </button>
+            </div>
+        </div>
+
         <div class="loading-tree" id="treeLoading" style="text-align: center; padding: 4rem;">
             <i class="ph ph-spinner ph-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; display: block;"></i>
             <span style="color: var(--text-muted); font-weight: 500;">Construindo árvore de endereços...</span>
