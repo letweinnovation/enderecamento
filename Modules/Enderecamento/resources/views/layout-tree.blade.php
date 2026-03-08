@@ -619,7 +619,15 @@
                 <i class="ph ph-caret-right"></i> <strong>{{ $enderecamento->Formatacao ?? $enderecamento->Descricao ?? 'Endereçamento' }}</strong>
             </div>
         </div>
-        <div style="margin-left: auto; display: flex; gap: 1rem;">
+        <div style="margin-left: auto; display: flex; gap: 0.75rem; align-items: center;">
+            <div class="glass-card" style="display: flex; gap: 0.25rem; padding: 0.4rem; border-radius: 12px; border: 1px solid var(--border);">
+                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 8px; border: none; box-shadow: none;" onclick="expandAllNodes()" title="Expandir Tudo">
+                    <i class="ph ph-unfold-list"></i>
+                </button>
+                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 8px; border: none; box-shadow: none;" onclick="collapseAllNodes()" title="Recolher Tudo">
+                    <i class="ph ph-fold-list"></i>
+                </button>
+            </div>
             <button class="btn-smart-generate" onclick="openSmartGenerator('')" style="background: white; color: var(--primary); border: 1px solid var(--primary);">
                 <i class="ph ph-plus-circle"></i> Novo Nível Principal
             </button>
@@ -1148,6 +1156,16 @@
         function showToast(msg) {
             // Simplified toast for now, can be improved with a real library
             alert(msg);
+        }
+
+        function expandAllNodes() {
+            const nodes = document.querySelectorAll('details.tree-node');
+            nodes.forEach(n => n.open = true);
+        }
+
+        function collapseAllNodes() {
+            const nodes = document.querySelectorAll('details.tree-node');
+            nodes.forEach(n => n.open = false);
         }
 
         async function cloneStructure(sourceId) {
