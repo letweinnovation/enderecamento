@@ -1,529 +1,678 @@
 @extends('enderecamento::layouts.master')
 
 @push('styles')
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-light: #e0f2fe;
+            --primary-dark: #0369a1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-body: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.8);
+            --border: rgba(226, 232, 240, 0.8);
+            --shadow-premium: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+        }
+
+        /* Glassmorphism utility */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-premium);
+            border-radius: 20px;
+        }
+
         .layout-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
+            padding: 1.5rem;
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .btn-back {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             background: white;
             border: 1px solid var(--border);
             color: var(--text-main);
-            transition: all 0.2s;
-            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .btn-back:hover {
-            background: #f1f5f9;
-            color: var(--primary);
+            background: var(--primary);
+            color: white;
+            transform: translateX(-3px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
         }
 
         .header-title-box h1 {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             margin: 0;
-            color: var(--text-main);
-            font-weight: 600;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-main) 0%, #475569 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .breadcrumbs {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
             margin-top: 0.25rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        /* Tree Styles */
-        .tree-container {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.5rem;
-            min-height: 400px;
-        }
-
-        details.tree-node {
-            margin: 4px 0 4px 1rem;
-        }
-        
-        /* O primeiro não precisa da margem esquerda extra */
-        .tree-root > details.tree-node {
-            margin-left: 0;
-        }
-
-        summary.tree-summary {
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background 0.1s;
-            user-select: none;
-            font-size: 0.9rem;
-            color: var(--text-main);
-        }
-
-        summary.tree-summary:hover {
-            background: #f8fafc;
-        }
-        
-        summary.tree-summary::marker {
-            display: none;
-            content: "";
-        }
-        
-        summary.tree-summary::-webkit-details-marker {
-            display: none;
-        }
-
-        .node-icon {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            transition: transform 0.2s;
-        }
-        
-        details[open] > summary > .node-icon {
-            transform: rotate(90deg);
-        }
-
-        .node-title {
-            font-weight: 500;
-        }
-
-        .node-alias {
-            font-family: monospace;
-            color: var(--primary);
-            background: #f0fdf4;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            border: 1px solid #bbf7d0;
-        }
-
-        .leaf-node {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 0.5rem 0.5rem 2.5rem;
-            margin: 2px 0;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            border-left: 2px solid transparent;
-        }
-
-        .leaf-node:hover {
-            background: #f8fafc;
-            border-left-color: var(--primary);
-        }
-
-        .leaf-icon {
-            color: #10b981;
-            margin-right: 0.5rem;
-        }
-
-        .leaf-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .leaf-badges {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.25rem;
-            font-size: 0.75rem;
-        }
-        
-        .badge-cubagem {
-            color: #64748b;
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        .loading-tree {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            color: var(--text-muted);
-        }
-
-        .loading-tree i {
-            font-size: 2rem;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-        
-        .tree-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .btn-tree-outline {
-            background: white;
-            border: 1px solid var(--border);
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-main);
-        }
-        
-        .btn-tree-outline:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
         }
 
         .info-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
         .info-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+            padding: 1.25rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
         }
 
         .info-card-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: #f1f5f9;
-            color: var(--primary);
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #bae6fd 100%);
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .info-card-text {
-            display: flex;
-            flex-direction: column;
+            font-size: 1.5rem;
         }
 
         .info-card-label {
             font-size: 0.75rem;
             color: var(--text-muted);
             text-transform: uppercase;
+            font-weight: 700;
             letter-spacing: 0.05em;
-            font-weight: 600;
         }
 
         .info-card-value {
-            font-size: 1rem;
-            color: var(--text-main);
-            font-weight: 500;
-        }
-
-        /* Minimalist Modal Setup */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(2px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-card {
-            background: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            overflow: hidden;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .modal-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f8fafc;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: var(--text-main);
             font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal-close {
-            background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer; transition: 0.2s;
-        }
-        .modal-close:hover { color: #ef4444; }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .simple-input-group {
-            display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem;
-        }
-        .simple-input-group label {
-            font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;
-        }
-        .simple-input-group input, .simple-input-group select {
-            padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;
-        }
-        
-        .row-twos {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-        }
-
-        .modal-footer {
-            padding: 1.25rem 1.5rem;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-            display: flex; justify-content: flex-end; gap: 0.75rem;
-        }
-
-        /* Inline Tree Button */
-        .btn-tree-add {
-            background: #e0f2fe; color: #0284c7; border: 1px dashed #7dd3fc; border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.75rem; opacity: 0.8; transition: 0.2s;
-        }
-        .btn-tree-add:hover { opacity: 1; background: #bae6fd; }
-
-        .sql-output-container {
-            margin-top: 1rem; position: relative; display: none;
-        }
-        
-        .sql-textarea {
-            width: 100%; height: 200px; font-family: monospace; padding: 1rem; background: #1e293b; color: #e2e8f0; border: none; border-radius: 6px; resize: vertical; margin-bottom: 0px;
-        }
-
-        .btn-copy-sql {
-            position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem;
-        }
-        /* Draft Nodes */
-        .tree-node.draft-node > summary, .leaf-node.draft-node {
-            background-color: #ecfdf5;
-            border: 1px dashed #10b981;
-        }
-        
-        .draft-badge {
-            font-size: 0.7rem;
-            color: #10b981;
-            background: #d1fae5;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 0.5rem;
+            color: var(--text-main);
             font-weight: 600;
         }
 
-        /* Action Bar */
+        /* Tree Styles Overhaul */
+        .tree-container {
+            padding: 2rem;
+            min-height: 500px;
+            margin-bottom: 5rem;
+        }
+
+        .tree-root {
+            border-left: 2px dashed rgba(14, 165, 233, 0.2);
+            padding-left: 1rem;
+        }
+
+        details.tree-node {
+            margin: 8px 0 8px 1.5rem;
+            position: relative;
+        }
+
+        details.tree-node::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 1.25rem;
+            width: 1.5rem;
+            height: 2px;
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        summary.tree-summary {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            user-select: none;
+            font-size: 0.95rem;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        summary.tree-summary:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        summary::-webkit-details-marker { display: none; }
+        summary::marker { display: none; }
+
+        .node-icon-caret {
+            font-size: 0.8rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted);
+        }
+
+        details[open] > summary > .node-icon-caret {
+            transform: rotate(90deg);
+        }
+
+        .leaf-node {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem 0.75rem 1.5rem;
+            margin: 6px 0 6px 3rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            background: white;
+            border: 1px solid var(--border);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .leaf-node:hover {
+            border-color: var(--success);
+            background: #f0fdf4;
+            transform: scale(1.01);
+        }
+
+        .leaf-node::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 50%;
+            width: 1.5rem;
+            height: 2px;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .leaf-icon-status {
+            color: var(--success);
+            font-size: 1.1rem;
+            margin-right: 0.75rem;
+        }
+
+        /* Smart Generator Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-card {
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: white;
+        }
+
+        .modal-body {
+            padding: 2rem;
+            overflow-y: auto;
+            background: #fcfcfc;
+        }
+
+        .generator-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+        }
+
+        .levels-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .level-row {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            position: relative;
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .level-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 0.5rem;
+        }
+
+        .level-row-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-remove-level {
+            color: var(--danger);
+            background: #fef2f2;
+            border: none;
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-remove-level:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .level-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .level-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .level-input-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .level-input-group input, .level-input-group select {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .level-input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .preview-sidebar {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            height: fit-content;
+        }
+
+        .preview-stat {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-list {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .btn-add-level {
+            background: white;
+            border: 2px dashed var(--primary);
+            color: var(--primary);
+            padding: 1rem;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add-level:hover {
+            background: var(--primary-light);
+        }
+
+        /* Action bar premium */
         .action-bar-floating {
             position: fixed;
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            background: white;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2.5rem;
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 2rem;
             z-index: 1000;
-            border: 1px solid var(--border);
-            animation: slideUp 0.3s ease-out;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes slideUp {
-            from { transform: translate(-50%, 20px); opacity: 0; }
+            from { transform: translate(-50%, 50px); opacity: 0; }
             to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .btn-save-final {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-save-final:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-smart-generate {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.75rem;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-smart-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Tree Node Badges */
+        .node-alias {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .draft-badge {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #10b981;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .btn-inline-add {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: none;
+            width: 24px; height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        summary:hover .btn-inline-add, .leaf-node:hover .btn-inline-add {
+            opacity: 1;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="layout-header">
+    <div class="layout-header glass-card">
         <a href="/enderecamentos" class="btn-back" title="Voltar para Endereçamentos">
             <i class="ph ph-arrow-left"></i>
         </a>
         <div class="header-title-box">
-            <h1>Layout Físico</h1>
+            <h1>Layout Físico Inteligente</h1>
             <div class="breadcrumbs">
-                {{ $tenant->name ?? 'Tenant' }} <i class="ph ph-caret-right"></i> 
-                {{ $armazem->nome ?? 'Armazém' }} <i class="ph ph-caret-right"></i> 
-                <strong>{{ $enderecamento->Formatacao ?? $enderecamento->Descricao ?? 'Endereçamento' }}</strong>
+                <i class="ph ph-buildings"></i> {{ $tenant->name ?? 'Tenant' }} 
+                <i class="ph ph-caret-right"></i> {{ $armazem->nome ?? 'Armazém' }} 
+                <i class="ph ph-caret-right"></i> <strong>{{ $enderecamento->Formatacao ?? $enderecamento->Descricao ?? 'Endereçamento' }}</strong>
             </div>
+        </div>
+        <div style="margin-left: auto;">
+            <button class="btn-smart-generate" onclick="openSmartGenerator('')">
+                <i class="ph ph-sparkle"></i> Gerador Inteligente
+            </button>
         </div>
     </div>
 
     <div class="info-cards">
-        <div class="info-card">
+        <div class="info-card glass-card">
             <div class="info-card-icon">
-                <i class="ph ph-buildings"></i>
+                <i class="ph ph-stack"></i>
             </div>
             <div class="info-card-text">
-                <span class="info-card-label">Armazém</span>
-                <span class="info-card-value">{{ $armazem->nome ?? '-' }}</span>
+                <span class="info-card-label">Modo de Operação</span>
+                <span class="info-card-value">Composite Layout</span>
             </div>
         </div>
-        <div class="info-card">
-            <div class="info-card-icon">
+        <div class="info-card glass-card">
+            <div class="info-card-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="ph ph-tree-structure"></i>
+            </div>
+            <div class="info-card-text">
+                <span class="info-card-label">Estrutura Ativa</span>
+                <span class="info-card-value">{{ $enderecamento->Descricao ?? 'N/A' }}</span>
+            </div>
+        </div>
+        <div id="treeStatsCard" class="info-card glass-card">
+            <div class="info-card-icon" style="background: #e0e7ff; color: #4338ca;">
                 <i class="ph ph-map-pin"></i>
             </div>
             <div class="info-card-text">
-                <span class="info-card-label">Endereçamento (Formatação)</span>
-                <span class="info-card-value">{{ $enderecamento->Formatacao ?? '-' }}</span>
-            </div>
-        </div>
-        <div class="info-card">
-            <div class="info-card-icon">
-                <i class="ph ph-tag"></i>
-            </div>
-            <div class="info-card-text">
-                <span class="info-card-label">Descrição</span>
-                <span class="info-card-value">{{ $enderecamento->Descricao ?? '-' }}</span>
+                <span class="info-card-label">Nós Carregados</span>
+                <span class="info-card-value" id="nodeCountBadge">Calculando...</span>
             </div>
         </div>
     </div>
 
-    <div class="tree-controls">
-        <button class="btn-tree-outline" onclick="expandAll()">
-            <i class="ph ph-arrows-out"></i> Expandir Tudo
-        </button>
-        <button class="btn-tree-outline" onclick="collapseAll()">
-            <i class="ph ph-arrows-in"></i> Recolher Tudo
-        </button>
-        <button class="btn-tree-outline" style="color: var(--primary); border-color: var(--primary); margin-left: auto;" onclick="openWizzard('')">
-            <i class="ph ph-plus-circle"></i> Gerar na Raiz
-        </button>
-    </div>
-
-    <!-- Wizzard Minimalist Modal -->
-    <div class="modal-overlay" id="wizzardModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="ph ph-magic-wand" style="color:var(--primary)"></i> Assistente Lógico</h3>
-                <button class="modal-close" onclick="closeWizzard()"><i class="ph ph-x"></i></button>
-            </div>
-            <div class="modal-body" style="padding-bottom: 0;">
-                <p id="wizzardSubtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top:0; margin-bottom: 1.5rem;">Gerando de forma encadeada baseada no layout atual.</p>
-                
-                <input type="hidden" id="wizParentId" value="">
-
-                <div class="simple-input-group">
-                    <label>Tipo de Divisão</label>
-                    <select id="wizTipo">
-                        <option value="1">1 - Rua / Corredor</option>
-                        <option value="2">2 - Prédio / Estante</option>
-                        <option value="3">3 - Nível / Andar</option>
-                        <option value="4">4 - Vão / Posição</option>
-                    </select>
-                </div>
-
-                <div class="row-twos">
-                    <div class="simple-input-group">
-                        <label title="Dica: Use 001 para auto preenchimento (ex: 005)">Início (De)</label>
-                        <input type="text" id="wizInicio" placeholder="Ex: 01" value="01">
-                    </div>
-                    <div class="simple-input-group">
-                        <label>Fim (Até)</label>
-                        <input type="text" id="wizFim" placeholder="Ex: 10" value="10">
-                    </div>
-                </div>
-
-                <div class="simple-input-group" id="wizReplicateContainer" style="display:none; margin-top: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; color: var(--text-main); font-size: 0.9rem;">
-                        <input type="checkbox" id="wizReplicateSiblings" style="width: 1.1rem; height: 1.1rem; cursor: pointer; accent-color: var(--primary);">
-                        Replicar criação para todos os nós Irmãos (mesmo nível)
-                    </label>
-                </div>
-
-                <div class="sql-output-container" id="sqlOutputContainer" style="display:none;">
-                    <textarea id="sqlOutputContent" class="sql-textarea" readonly></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-tree-outline" onclick="closeWizzard()">Cancelar</button>
-                <button class="btn-ajustar" onclick="previewAndAddNodes()" id="btnGenerateSql" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto;">
-                    <i class="ph ph-magic-wand"></i> Injetar Previews
-                </button>
-            </div>
+    <div class="tree-container glass-card" id="treeContainer">
+        <div class="loading-tree" id="treeLoading" style="text-align: center; padding: 4rem;">
+            <i class="ph ph-spinner ph-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem; display: block;"></i>
+            <span style="color: var(--text-muted); font-weight: 500;">Construindo árvore de endereços...</span>
         </div>
-    </div>
-
-    <div class="tree-container" id="treeContainer">
-        <div class="loading-tree" id="treeLoading">
-            <i class="ph ph-spinner"></i>
-            <span>Carregando árvore de endereços...</span>
-        </div>
+        
         <div class="tree-root" id="treeRoot" style="display: none;"></div>
         
-        <div id="treeEmptyState" style="display: none; color: var(--text-muted); padding: 3rem; text-align: center; border: 2px dashed var(--border); border-radius: 8px;">
-            <i class="ph ph-tree-structure" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display:block;"></i>
-            <strong>Esta estrutura não possui Layout Físico gerado</strong><br><br>
-            <button class="btn-ajustar" onclick="openWizzard('')" style="margin-top: 1rem;"><i class="ph ph-plus"></i> Gerar Primeira Rua na Raiz</button>
+        <div id="treeEmptyState" style="display: none; padding: 4rem; text-align: center;">
+            <div style="background: #f1f5f9; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <i class="ph ph-tree-structure" style="font-size: 2.5rem; color: #94a3b8;"></i>
+            </div>
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Nenhum layout físico encontrado</h3>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Comece gerando a estrutura inicial para este endereçamento.</p>
+            <button class="btn-smart-generate" onclick="openSmartGenerator('')" style="margin: 0 auto;">
+                <i class="ph ph-plus"></i> Iniciar Criação
+            </button>
         </div>
     </div>
 
-    <div id="actionBar" class="action-bar-floating" style="display: none;">
-        <span style="font-weight: 500; color: var(--text-main);">
-            <i class="ph ph-warning-circle" style="color: #f59e0b; font-size: 1.2rem; vertical-align: middle; margin-right: 0.25rem;"></i>
-            <span id="draftCount">0</span> modificação(ões) não salvas
-        </span>
-        <button class="btn-ajustar" onclick="consolidateNewNodes()" id="btnSaveFinal" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: 600;">
-            <i class="ph ph-floppy-disk"></i> Gravar Modificações
+    <!-- Smart Generator Modal -->
+    <div class="modal-overlay" id="smartGeneratorModal">
+        <div class="modal-card glass-card" style="background: white !important;">
+            <div class="modal-header">
+                <div style="display:flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h2 style="margin:0; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="ph ph-sparkle" style="color: var(--primary);"></i> Gerador Inteligente
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                            Defina múltiplos níveis de hierarquia para gerar endereços em massa.
+                        </p>
+                    </div>
+                    <button class="btn-back" style="width: 36px; height: 36px; border-radius: 10px;" onclick="closeSmartGenerator()">
+                        <i class="ph ph-x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="wizParentId" value="">
+                <div class="generator-grid">
+                    <div class="left-panel">
+                        <div class="levels-container" id="levelsContainer">
+                            <!-- Levels will be injected here -->
+                        </div>
+                        <button class="btn-add-level" onclick="addNewLevelRow()" style="margin-top: 1.5rem; width: 100%;">
+                            <i class="ph ph-plus-circle"></i> Adicionar Próximo Nível
+                        </button>
+                        
+                        <div style="margin-top: 2rem; padding: 1rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; display: flex; gap: 1rem; align-items: flex-start;">
+                            <i class="ph ph-info" style="color: #d97706; font-size: 1.5rem; margin-top: 2px;"></i>
+                            <div style="font-size: 0.85rem; color: #92400e; line-height: 1.5;">
+                                <strong>Dica de Endereçáveis:</strong> O último nível da hierarquia será marcado automaticamente como endereçável (folha). Se você criar apenas um nível, ele será a folha.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="right-panel">
+                        <div class="preview-sidebar">
+                            <h4 style="margin: 0 0 1rem 0; font-weight: 700; color: var(--text-main); font-size: 0.85rem; text-transform: uppercase;">Resumo da Operação</h4>
+                            <div class="preview-stat" id="previewNodeTotal">0</div>
+                            <div class="preview-stat-label">Novos endereços serão gerados</div>
+                            
+                            <h4 style="margin: 1.5rem 0 0.75rem 0; font-weight: 700; color: var(--text-main); font-size: 0.8rem;">Exemplo de Formatação</h4>
+                            <div class="preview-list" id="samplePreviewList">
+                                <em>Nenhum dado...</em>
+                            </div>
+
+                            <button class="btn-save-final" id="btnApplyPreview" onclick="applyPreviewNodes()" style="width: 100%; margin-top: 1.5rem;">
+                                <i class="ph ph-plus-circle"></i> Injetar na Árvore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Bar -->
+    <div id="actionBar" class="action-bar-floating glass-card" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 12px; height: 12px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success);"></div>
+            <span style="font-weight: 600; color: var(--text-main);">
+                <span id="draftCount">0</span> alteração(ões) pendente(s)
+            </span>
+        </div>
+        <div style="width: 1px; height: 30px; background: var(--border);"></div>
+        <button class="btn-save-final" onclick="consolidateNewNodes()" id="btnSaveFinal">
+            <i class="ph ph-cloud-arrow-up"></i> Gravar Modificações
         </button>
     </div>
 
     <!-- SQL Final Dialog -->
     <div class="modal-overlay" id="sqlFinalModal">
-        <div class="modal-card">
+        <div class="modal-card" style="max-width: 700px; background: white !important;">
             <div class="modal-header">
-                <h3 class="modal-title"><i class="ph ph-check-circle" style="color: #10b981;"></i> Script Consolidado</h3>
-                <button class="modal-close" onclick="document.getElementById('sqlFinalModal').style.display='none'"><i class="ph ph-x"></i></button>
+                <h3 style="margin:0; font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="ph ph-check-circle"></i> Script Consolidado
+                </h3>
             </div>
             <div class="modal-body">
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">O script abaixo processou as diferenças visuais geradas. Execute-o no banco de dados para efetivar as adições.</p>
-                <div class="sql-output-container" style="display:block;">
-                    <button class="btn-copy-sql" onclick="copyFinalSql()"><i class="ph ph-copy"></i> Copiar</button>
-                    <textarea id="sqlFinalContent" class="sql-textarea" readonly style="min-height: 250px;"></textarea>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Abaixo está o script SQL para efetivar as mudanças na base de dados. Execute-o via console ou ferramenta de DBA.
+                </p>
+                <div style="position: relative;">
+                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 300px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px;"></textarea>
+                    <button onclick="copyFinalSql()" style="position: absolute; top: 1rem; right: 1rem; background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="ph ph-copy"></i> Copiar SQL
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-ajustar" onclick="document.getElementById('sqlFinalModal').style.display='none'; location.reload();" style="background: var(--primary); width: 100%;">
-                    Avançar e Recarregar
+            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; gap: 1rem;">
+                <button class="btn-save-final" style="width: 100%;" onclick="location.reload();">
+                    Finalizar e Recarregar Árvore
                 </button>
             </div>
         </div>
@@ -535,360 +684,285 @@
         const tenantId = '{{ $tenantId }}';
         const armazemId = '{{ $armazemId }}';
         const enderecamentoId = '{{ $enderecamentoId }}';
+        
+        window.layoutData = [];
+        let levelCount = 0;
 
-        window.layoutFisicoData = [];
+        document.addEventListener('DOMContentLoaded', fetchTreeData);
 
-        document.addEventListener('DOMContentLoaded', fetchLayoutTree);
-
-        async function fetchLayoutTree() {
+        async function fetchTreeData() {
             try {
                 const response = await fetch(`/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`);
-                const result = await response.json();
+                const res = await response.json();
 
-                if (result.success) {
-                    window.layoutFisicoData = result.data;
-                    const treeData = buildTree(window.layoutFisicoData);
-                    if (treeData) populateParentSelect(treeData);
-                    updateActionBar();
+                if (res.success) {
+                    window.layoutData = res.data;
+                    renderTree();
+                    updateUIStats();
                 } else {
-                    showError(result.message || 'Erro ao carregar árvore de layout.');
+                    handleError(res.message);
                 }
-            } catch (error) {
-                console.error('Network Error:', error);
-                showError('Falha de conexão com o servidor ao carregar Layout Físico.');
+            } catch (e) {
+                handleError('Falha crítica de conexão.');
             }
         }
 
-        function buildTree(flatData) {
-            const rootEl = document.getElementById('treeRoot');
-            const emptyEl = document.getElementById('treeEmptyState');
-            
-            // Empty State Safety Check
-            if (!flatData || !Array.isArray(flatData) || flatData.length === 0) {
-                document.getElementById('treeLoading').style.display = 'none';
-                rootEl.style.display = 'none';
-                emptyEl.style.display = 'block';
-                return [];
+        function renderTree() {
+            const root = document.getElementById('treeRoot');
+            const loading = document.getElementById('treeLoading');
+            const empty = document.getElementById('treeEmptyState');
+
+            loading.style.display = 'none';
+
+            if (!window.layoutData || window.layoutData.length === 0) {
+                root.style.display = 'none';
+                empty.style.display = 'block';
+                return;
             }
 
-            emptyEl.style.display = 'none';
+            empty.style.display = 'none';
+            root.style.display = 'block';
 
+            // Build Map
             const map = {};
-            const roots = [];
+            const forest = [];
 
-            // 1) Initialize map
-            flatData.forEach(node => {
-                map[node.id] = { ...node, children: [] };
+            window.layoutData.forEach(n => {
+                map[n.id] = { ...n, children: [] };
             });
 
-            // 2) Build hierarchy
-            flatData.forEach(node => {
-                if (node.parent_id === null || node.parent_id === undefined) {
-                    roots.push(map[node.id]);
+            window.layoutData.forEach(n => {
+                if (n.parent_id && map[n.parent_id]) {
+                    map[n.parent_id].children.push(map[n.id]);
                 } else {
-                    if (map[node.parent_id]) {
-                        map[node.parent_id].children.push(map[node.id]);
-                    } else {
-                        // Parent is missing from data, treat as root to avoid orphan loss
-                        roots.push(map[node.id]);
-                    }
+                    forest.push(map[n.id]);
                 }
             });
 
-            // 3) Render HTML recursively
-            if (roots.length === 0) {
-                rootEl.style.display = 'none';
-                emptyEl.style.display = 'block';
-            } else {
-                let html = '';
-                roots.forEach(r => {
-                    html += generateNodeHtml(r);
-                });
-                
-                // Botão Adicional na base da árvore para Criar Raiz
-                html += `
-                    <div style="margin-top: 1rem; margin-left: 24px;">
-                        <button class="btn-tree-outline" onclick="openWizzard('')" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: #cbd5e1; color: var(--text-main); background: #f8fafc; border-style: dashed;">
-                            <i class="ph ph-plus"></i> Adicionar nova raiz
-                        </button>
-                    </div>
-                `;
-                
-                rootEl.innerHTML = html;
-            }
-
-            document.getElementById('treeLoading').style.display = 'none';
-            rootEl.style.display = 'block';
-
-            return roots;
+            let html = '';
+            forest.forEach(rootNode => {
+                html += generateTreeHtml(rootNode);
+            });
+            
+            root.innerHTML = html;
         }
 
-        function generateNodeHtml(node) {
-            const draftClass = node.is_new ? 'draft-node' : '';
+        function generateTreeHtml(node) {
+            const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
+            const addBtn = `<button class="btn-inline-add" onclick="event.preventDefault(); openSmartGenerator('${node.id}')" title="Gerar Filhos"><i class="ph ph-plus"></i></button>`;
 
-            // Is it a leaf node? (No children or is explicitly enderecavel and has no children)
-            if (node.children.length === 0) {
-                const isAliasSame = node.alias === node.nome;
-                const isFormatadoSame = node.formatado === node.nome;
-
-                const aliasBadge = (node.alias && !isAliasSame) ? `<span class="node-alias" title="Alias">${node.alias}</span>` : '';
-                const formatado = (node.formatado && !isFormatadoSame) ? `<span title="Formatado">(${node.formatado})</span>` : '';
-                const maxCub = node.max_cubagem ? `<span class="badge-cubagem"><i class="ph ph-cube"></i> Max: ${node.max_cubagem}</span>` : '';
-                
-                const addBtnHtml = `<button class="btn-tree-add" onclick="openWizzard('${node.id}', '${node.nome}')" title="Gerar Filhos"><i class="ph ph-plus"></i></button>`;
-
+            if (!node.children || node.children.length === 0) {
+                const aliasNode = node.alias && node.alias !== node.nome ? `<span class="node-alias">${node.alias}</span>` : '';
                 return `
-                    <div class="leaf-node ${draftClass}">
-                        <i class="ph ph-check-circle leaf-icon"></i>
-                        <div class="leaf-info">
-                            <div style="display:flex; align-items:center;">
-                                <strong class="node-title">${node.nome}</strong> ${draftBadge} ${formatado} ${aliasBadge} ${addBtnHtml}
-                            </div>
+                    <div class="leaf-node ${isDraft}">
+                        <i class="ph ph-check-circle leaf-icon-status"></i>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem;">
+                            <strong style="font-weight: 600;">${node.nome}</strong>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
+                            ${aliasNode}
+                            ${draftBadge}
                         </div>
+                        ${addBtn}
                     </div>
                 `;
             }
 
-            // Group Node (has children)
-            let childrenHtml = '';
-            node.children.forEach(child => {
-                childrenHtml += generateNodeHtml(child);
-            });
-
-            const addGrpBtnHtml = `<button class="btn-tree-add" onclick="event.preventDefault(); openWizzard('${node.id}', '${node.nome}')" title="Gerar Filhos"><i class="ph ph-plus"></i> Add</button>`;
+            let kidsHtml = '';
+            node.children.forEach(c => kidsHtml += generateTreeHtml(c));
 
             return `
-                <details class="tree-node ${draftClass}">
+                <details class="tree-node ${isDraft}" open>
                     <summary class="tree-summary">
-                        <i class="ph ph-caret-right node-icon"></i>
-                        <i class="ph ph-folder" style="color: #64748b;"></i>
-                        <span class="node-title">${node.nome}</span> ${draftBadge}
-                        ${addGrpBtnHtml}
+                        <i class="ph ph-caret-right node-icon-caret"></i>
+                        <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
+                        <span style="font-weight: 600;">${node.nome}</span>
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
+                        ${draftBadge}
+                        ${addBtn}
                     </summary>
-                    ${childrenHtml}
+                    ${kidsHtml}
                 </details>
             `;
         }
 
-        function expandAll() {
-            document.querySelectorAll('details.tree-node').forEach(detail => detail.open = true);
-        }
-
-        function collapseAll() {
-            document.querySelectorAll('details.tree-node').forEach(detail => detail.open = false);
-        }
-
-        // ==========================================
-        // WIZZARD SCRIPT LOGIC
-        // ==========================================
-
-        function openWizzard(baseParentId, parentName = '') {
-            document.getElementById('sqlOutputContainer').style.display = 'none';
-            document.getElementById('sqlOutputContent').value = '';
-
-            document.getElementById('wizParentId').value = baseParentId;
-            
-            if (baseParentId !== '') {
-                document.getElementById('wizzardSubtitle').innerHTML = `Instanciando Nível-Filho para herdar dinamicamente o nó <strong style="color:var(--primary)">${parentName}</strong>.`;
-                
-                // Exibe checkbox de replicação se houver irmãos
-                const parentNode = window.layoutFisicoData.find(n => String(n.id) === String(baseParentId));
-                if (parentNode) {
-                    const siblings = window.layoutFisicoData.filter(n => n.parent_id === parentNode.parent_id && String(n.id) !== String(baseParentId));
-                    if(siblings.length > 0) {
-                        document.getElementById('wizReplicateContainer').style.display = 'block';
-                        document.getElementById('wizReplicateSiblings').checked = false;
-                    } else {
-                        document.getElementById('wizReplicateContainer').style.display = 'none';
-                    }
-                } else {
-                    document.getElementById('wizReplicateContainer').style.display = 'none';
-                }
-            } else {
-                document.getElementById('wizzardSubtitle').innerHTML = `Injetando um Nível diretamente na Raiz Principal da árvore.`;
-                document.getElementById('wizReplicateContainer').style.display = 'none';
-            }
-
-            document.getElementById('wizzardModal').style.display = 'flex';
-        }
-
-        function closeWizzard() {
-            document.getElementById('wizzardModal').style.display = 'none';
-        }
-
-        async function previewAndAddNodes() {
-            const baseId = document.getElementById('wizParentId').value;
-            const initValue = document.getElementById('wizInicio').value;
-            const fimValue = document.getElementById('wizFim').value;
-            const tipoValue = document.getElementById('wizTipo').value;
-
-            if (!initValue || !fimValue) {
-                showToast("Preencha De/Até corretamente");
-                return;
-            }
-
-            const payloadNiveis = [];
-            payloadNiveis.push({
-                tipo_componente: parseInt(tipoValue),
-                prefixo: '',
-                sufixo: '',
-                separador: '-',
-                inicio: initValue,
-                fim: fimValue
-            });
-
-            const btn = document.getElementById('btnGenerateSql');
-            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando...';
-            btn.disabled = true;
-
-            try {
-                const parentNode = window.layoutFisicoData.find(n => String(n.id) === String(baseId));
-                const formatadoObj = parentNode ? parentNode.formatado : '';
-                
-                const replicateCheck = document.getElementById('wizReplicateSiblings') && document.getElementById('wizReplicateSiblings').checked;
-
-                let targets = [{id: baseId, formatado: formatadoObj}];
-
-                if (replicateCheck && parentNode) {
-                    const siblings = window.layoutFisicoData.filter(n => n.parent_id === parentNode.parent_id);
-                    targets = siblings.map(s => ({id: s.id, formatado: s.formatado}));
-                }
-
-                // --- VALIDAÇÃO DE CONFLITOS (FRONTEND PRE-FETCH) ---
-                const existingFormats = new Set(window.layoutFisicoData.map(n => n.formatado));
-                let foundConflicts = [];
-                let limitExamples = 3;
-
-                // Constrói iterativamente todos os nós que vão nascer para testar a colisão
-                targets.forEach(tgt => {
-                    let startNum = parseFloat(initValue);
-                    let endNum = parseFloat(fimValue);
-                    let isNumeric = !isNaN(startNum) && !isNaN(endNum);
-                    
-                    let arr = [];
-                    if(isNumeric) {
-                        for(let i = startNum; i <= endNum; i++) arr.push(i.toString());
-                    } else {
-                        // Letras simples
-                        arr.push(initValue.toString());
-                        if(initValue !== fimValue) arr.push(fimValue.toString()); // Aproximação pra chars
-                    }
-
-                    let prefix = ""; // se formos usar futuramente
-                    let suffix = "";
-                    let padStr = initValue.toString();
-                    
-                    arr.forEach(val => {
-                        let finalVal = val;
-                        // zero-padding basico se inicio começar com 0
-                        if (padStr.length > 1 && padStr.startsWith('0') && !isNaN(val)) {
-                            finalVal = String(val).padStart(padStr.length, '0');
-                        }
-                        
-                        let sigla = prefix + finalVal + suffix;
-                        let formatadoHipotetico = (tgt.formatado === '') ? sigla : (tgt.formatado + '-' + sigla);
-                        
-                        if (existingFormats.has(formatadoHipotetico)) {
-                            if(foundConflicts.length < limitExamples) {
-                                foundConflicts.push(formatadoHipotetico);
-                            } else if (foundConflicts.length === limitExamples) {
-                                foundConflicts.push('...');
-                            }
-                        }
-                    });
-                });
-
-                if (foundConflicts.length > 0) {
-                    btn.innerHTML = '<i class="ph ph-magic-wand"></i> Injetar Previews';
-                    btn.disabled = false;
-                    
-                    const plural = foundConflicts.length > 1 || foundConflicts.includes('...') ? 'Os endereços' : 'O endereço';
-                    const exampleStr = foundConflicts.join(', ');
-                    
-                    const confirmMsg = `Atenção: ${plural} "${exampleStr}" já constam na árvore atual (seja oficial ou em rascunho).\n\nDeseja seguir injetando esses itens mesmo assim, duplicando as vias?`;
-                    
-                    if (!confirm(confirmMsg)) {
-                        return; // Usuário cancelou
-                    }
-                    
-                    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando...';
-                    btn.disabled = true;
-                }
-                // --- FIM DA VALIDAÇÃO ---
-
-                const promises = targets.map(target => {
-                    return fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json', 
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            tenant_id: tenantId,
-                            armazem_id: armazemId,
-                            enderecamento_id: enderecamentoId,
-                            base_parent_id: target.id,
-                            base_parent_format: target.formatado,
-                            niveis: payloadNiveis
-                        })
-                    }).then(r => r.json());
-                });
-
-                const results = await Promise.all(promises);
-
-                let allSuccess = true;
-                let errorMsg = '';
-                results.forEach(res => {
-                    if (res.success) {
-                        window.layoutFisicoData = window.layoutFisicoData.concat(res.data);
-                    } else {
-                        allSuccess = false;
-                        errorMsg = res.message;
-                    }
-                });
-
-                if (allSuccess || window.layoutFisicoData.length > 0) {
-                    buildTree(window.layoutFisicoData);
-                    closeWizzard();
-                    updateActionBar();
-                    showToast("Rascunhos injetados com sucesso na árvore!");
-                    if(!allSuccess) alert("Atenção: Alguns nós falharam ao replicar.");
-                } else {
-                    alert('Erro generalizado: ' + errorMsg);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert("Falha de conexão ao simular nós.");
-            } finally {
-                btn.innerHTML = '<i class="ph ph-magic-wand"></i> Injetar Previews';
-                btn.disabled = false;
-            }
-        }
-
-        function updateActionBar() {
-            const draftNodes = window.layoutFisicoData.filter(n => n.is_new);
-            const bar = document.getElementById('actionBar');
+        function updateUIStats() {
+            document.getElementById('nodeCountBadge').textContent = window.layoutData.length;
+            const draftNodes = window.layoutData.filter(n => n.is_new);
+            const actionBar = document.getElementById('actionBar');
             if (draftNodes.length > 0) {
                 document.getElementById('draftCount').textContent = draftNodes.length;
-                bar.style.display = 'flex';
+                actionBar.style.display = 'flex';
             } else {
-                bar.style.display = 'none';
+                actionBar.style.display = 'none';
             }
         }
 
-        async function consolidateNewNodes() {
-            const draftNodes = window.layoutFisicoData.filter(n => n.is_new);
-            if(draftNodes.length === 0) return;
+        // --- SMART GENERATOR LOGIC ---
 
-            const btn = document.getElementById('btnSaveFinal');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Processando...';
+        const BASE_LAYOUT_TYPES = [
+            { id: 1, name: 'Nível 1' },
+            { id: 2, name: 'Nível 2' },
+            { id: 3, name: 'Nível 3' },
+            { id: 4, name: 'Nível 4' },
+            { id: 5, name: 'Nível 5' },
+            { id: 6, name: 'Nível 6' }
+        ];
+
+        function openSmartGenerator(parentId) {
+            document.getElementById('wizParentId').value = parentId;
+            document.getElementById('levelsContainer').innerHTML = '';
+            levelCount = 0;
+            
+            // Start with one level always
+            addNewLevelRow();
+            
+            document.getElementById('smartGeneratorModal').style.display = 'flex';
+            updatePreviewStats();
+        }
+
+        function closeSmartGenerator() {
+            document.getElementById('smartGeneratorModal').style.display = 'none';
+        }
+
+        function addNewLevelRow() {
+            levelCount++;
+            const container = document.getElementById('levelsContainer');
+            const div = document.createElement('div');
+            div.className = 'level-row';
+            div.id = `level_row_${levelCount}`;
+            
+            // Suggest type based on count
+            const suggestedType = levelCount <= 6 ? levelCount : 6;
+
+            div.innerHTML = `
+                <div class="level-row-header">
+                    <span class="level-row-title">Configuração do Nível ${levelCount}</span>
+                    ${levelCount > 1 ? `<button class="btn-remove-level" onclick="removeLevelRow(${levelCount})"><i class="ph ph-trash"></i></button>` : ''}
+                </div>
+                <div class="level-inputs">
+                    <div class="level-input-group">
+                        <label>Identificador Tipo</label>
+                        <select onchange="updatePreviewStats()">
+                            ${BASE_LAYOUT_TYPES.map(t => `<option value="${t.id}" ${t.id === suggestedType ? 'selected' : ''}>${t.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="level-input-group">
+                        <label>Início (De)</label>
+                        <input type="text" value="01" placeholder="Ex: 01" oninput="updatePreviewStats()">
+                    </div>
+                    <div class="level-input-group">
+                        <label>Fim (Até)</label>
+                        <input type="text" value="10" placeholder="Ex: 10" oninput="updatePreviewStats()">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            updatePreviewStats();
+        }
+
+        function removeLevelRow(id) {
+            const row = document.getElementById(`level_row_${id}`);
+            if (row) row.remove();
+            updatePreviewStats();
+        }
+
+        function collectLevelData() {
+            const rows = document.querySelectorAll('.level-row');
+            const levels = [];
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                levels.push({
+                    tipo_componente: parseInt(inputs[0].value),
+                    inicio: inputs[1].value,
+                    fim: inputs[2].value
+                });
+            });
+            return levels;
+        }
+
+        function updatePreviewStats() {
+            const levels = collectLevelData();
+            let total = 0;
+            let sampleText = "";
+            
+            if (levels.length > 0) {
+                // Calculation logic
+                let combos = 1;
+                levels.forEach(L => {
+                    let start = parseInt(L.inicio);
+                    let end = parseInt(L.fim);
+                    if (!isNaN(start) && !isNaN(end)) {
+                        combos *= (Math.abs(end - start) + 1);
+                    } else {
+                        // handle chars
+                        combos *= (L.fim.charCodeAt(0) - L.inicio.charCodeAt(0) + 1);
+                    }
+                });
+                
+                // IF it's under a parent, we must multiply by the number of parents if it's a replication
+                // (For simplicity in preview, we show per-target count if target exists)
+                total = combos;
+                
+                // Simple Sample generator
+                sampleText = generateSampleDraft(levels);
+            }
+
+            document.getElementById('previewNodeTotal').textContent = total;
+            document.getElementById('samplePreviewList').innerHTML = sampleText || '<em>Formatando...</em>';
+        }
+
+        function generateSampleDraft(levels) {
+            let names = [""];
+            levels.forEach((L, idx) => {
+                let start = L.inicio;
+                let end = L.fim;
+                let pad = start.length > 1 && start.startsWith('0') ? start.length : 0;
+                
+                let startVal, endVal, isNum = false;
+                if (!isNaN(parseInt(start)) && !isNaN(parseInt(end))) {
+                    startVal = parseInt(start); endVal = parseInt(end); isNum = true;
+                } else {
+                    startVal = start.charCodeAt(0); endVal = end.charCodeAt(0);
+                }
+
+                let newNames = [];
+                // Only take first 2 for preview if names get too large
+                let countToTake = isNum ? Math.min(Math.abs(endVal - startVal) + 1, 2) : 2;
+
+                for (let i = 0; i < countToTake; i++) {
+                    let currentVal = startVal + i;
+                    let strVal = isNum ? String(currentVal) : String.fromCharCode(currentVal);
+                    if (pad > 0 && isNum) strVal = strVal.padStart(pad, '0');
+                    
+                    names.forEach(n => {
+                        newNames.push((n ? n + '-' : '') + strVal);
+                    });
+                }
+                names = newNames;
+            });
+            
+            return names.map(n => `<div><i class="ph ph-dot" style="color:var(--primary)"></i> ${n}</div>`).join('') + 
+                   (names.length > 5 ? '<div>...</div>' : '');
+        }
+
+        async function applyPreviewNodes() {
+            const parentId = document.getElementById('wizParentId').value;
+            const levels = collectLevelData();
+            const btn = document.getElementById('btnApplyPreview');
+            
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Injetando...';
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/enderecamentos/layout-fisico/generate-script', {
+                // Get base formatting if parent exists
+                let baseFormat = '';
+                if (parentId) {
+                    const p = window.layoutData.find(n => String(n.id) === String(parentId));
+                    if (p) baseFormat = p.formatado;
+                }
+
+                const response = await fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
@@ -899,59 +973,85 @@
                         tenant_id: tenantId,
                         armazem_id: armazemId,
                         enderecamento_id: enderecamentoId,
+                        base_parent_id: parentId,
+                        base_parent_format: baseFormat,
+                        niveis: levels
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    window.layoutData = window.layoutData.concat(result.data);
+                    renderTree();
+                    updateUIStats();
+                    closeSmartGenerator();
+                    showToast("Preview injetado com sucesso!");
+                } else {
+                    alert('Erro ao gerar: ' + result.message);
+                }
+            } catch (e) {
+                alert('Falha na requisição de preview.');
+            } finally {
+                btn.innerHTML = '<i class="ph ph-plus-circle"></i> Injetar na Árvore';
+                btn.disabled = false;
+            }
+        }
+
+        async function consolidateNewNodes() {
+            const draftNodes = window.layoutData.filter(n => n.is_new);
+            if(draftNodes.length === 0) return;
+
+            const btn = document.getElementById('btnSaveFinal');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Processando...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/enderecamentos/layout-fisico/generate-script', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({
+                        tenant_id: tenantId,
+                        armazem_id: armazemId,
+                        enderecamento_id: enderecamentoId,
                         nodes: draftNodes
                     })
                 });
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('sqlFinalContent').value = result.sql;
+                const res = await response.json();
+                if (res.success) {
+                    document.getElementById('sqlFinalContent').value = res.sql;
                     document.getElementById('sqlFinalModal').style.display = 'flex';
                 } else {
-                    alert('Erro: ' + result.message);
+                    alert('Erro no servidor: ' + res.message);
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert("Falha de conexão ao consolidar script.");
+            } catch (e) {
+                alert('Erro de conexão ao consolidar.');
             } finally {
-                btn.innerHTML = originalHtml;
+                btn.innerHTML = original;
                 btn.disabled = false;
             }
         }
 
         function copyFinalSql() {
-            const sqlText = document.getElementById('sqlFinalContent');
-            sqlText.select();
-            sqlText.setSelectionRange(0, 999999); 
-            document.execCommand("copy");
-            showToast("Script copiado! Atualize a página após executar no banco.");
-            window.getSelection().removeAllRanges();
+            const el = document.getElementById('sqlFinalContent');
+            el.select();
+            document.execCommand('copy');
+            showToast("SQL copiado com sucesso!");
         }
 
-        // ==========================================
-        
-        function populateParentSelect(items, indent = '') {
-            const select = document.getElementById('baseParentId');
-            if(!select) return;
-
-            items.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item.id;
-                opt.text = `${indent}${item.nome}`;
-                select.appendChild(opt);
-                if (item.children && item.children.length > 0) {
-                    populateParentSelect(item.children, indent + '— ');
-                }
-            });
-        }
-        
-        function showError(msg) {
+        function handleError(msg) {
             document.getElementById('treeContainer').innerHTML = `
-                <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
-                    <i class="ph ph-warning" style="font-size: 2rem; color: #ef4444; margin-bottom: 1rem;"></i>
-                    <p>${msg}</p>
+                <div style="text-align: center; padding: 4rem;">
+                    <i class="ph ph-warning-circle" style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-main);">Ops! Algo deu errado</h3>
+                    <p style="color: var(--text-muted);">${msg}</p>
                 </div>
             `;
+        }
+
+        function showToast(msg) {
+            // Simplified toast for now, can be improved with a real library
+            alert(msg);
         }
     </script>
 @endpush
