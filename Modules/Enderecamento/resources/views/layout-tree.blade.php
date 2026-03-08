@@ -231,181 +231,76 @@
             margin-right: 0.75rem;
         }
 
-        /* Smart Generator Modal */
-        .modal-overlay {
+        /* Skeleton Node (In-line add) */
+        .skeleton-node {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            margin: 6px 0 6px 3rem;
+            border-radius: 12px;
+            border: 2px dashed #cbd5e1;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            max-width: fit-content;
+        }
+
+        .skeleton-node:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .skeleton-node input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--primary-dark);
+            font-weight: 600;
+            width: 100px;
+            margin-left: 0.5rem;
+        }
+
+        /* Selection Mode Styles */
+        .selection-mode .tree-summary, .selection-mode .leaf-node {
+            opacity: 0.5;
+            cursor: pointer;
+        }
+
+        .selection-mode .selectable-sibling {
+            opacity: 1;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.2);
+        }
+
+        .selection-mode .selected-target {
+            background: var(--primary-light);
+            border-color: var(--primary-dark);
+            color: var(--primary-dark);
+        }
+
+        .selection-mode .selected-target i {
+            color: var(--primary-dark);
+        }
+
+        .selection-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 2000;
+            padding: 1rem 2rem;
             display: none;
             align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        .modal-card {
-            max-width: 900px;
-            width: 100%;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .modal-header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--border);
-            background: white;
-        }
-
-        .modal-body {
-            padding: 2rem;
-            overflow-y: auto;
-            background: #fcfcfc;
-        }
-
-        .generator-grid {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 2rem;
-        }
-
-        .levels-container {
-            display: flex;
-            flex-direction: column;
             gap: 1.5rem;
+            animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .level-row {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.25rem;
-            position: relative;
-            animation: slideInLeft 0.3s ease-out;
-        }
-
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .level-row-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 0.5rem;
-        }
-
-        .level-row-title {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .btn-remove-level {
-            color: var(--danger);
-            background: #fef2f2;
-            border: none;
-            width: 28px; height: 28px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-remove-level:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .level-inputs {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        .level-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .level-input-group label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        .level-input-group input, .level-input-group select {
-            padding: 0.6rem 0.8rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .level-input-group input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
-
-        .preview-sidebar {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            position: sticky;
-            top: 0;
-            height: fit-content;
-        }
-
-        .preview-stat {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .preview-stat-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-        }
-
-        .preview-list {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 1rem;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            line-height: 1.6;
-        }
-
-        .btn-add-level {
-            background: white;
-            border: 2px dashed var(--primary);
-            color: var(--primary);
-            padding: 1rem;
-            border-radius: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn-add-level:hover {
-            background: var(--primary-light);
+        @keyframes slideDown {
+            from { transform: translate(-50%, -50px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
 
         /* Action bar premium */
@@ -445,25 +340,6 @@
         .btn-save-final:hover {
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-smart-generate {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.75rem;
-            border-radius: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-        }
-
-        .btn-smart-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.4);
         }
 
         /* Tree Node Badges */
@@ -521,11 +397,6 @@
                 margin-left: 0 !important;
             }
 
-            .btn-smart-generate {
-                width: 100%;
-                justify-content: center;
-            }
-
             .info-cards {
                 grid-template-columns: 1fr;
                 gap: 1rem;
@@ -535,46 +406,13 @@
                 padding: 1rem;
             }
 
-            .tree-node, .leaf-node {
+            .tree-node, .leaf-node, .skeleton-node {
                 margin-left: 0.75rem !important;
             }
 
             .tree-node::before, .leaf-node::before {
                 width: 0.75rem;
                 left: -0.75rem;
-            }
-
-            /* Modal Adjustments */
-            .modal-overlay {
-                padding: 0.5rem;
-            }
-
-            .modal-card {
-                max-height: 95vh;
-                border-radius: 12px;
-            }
-
-            .modal-header {
-                padding: 1rem;
-            }
-
-            .modal-body {
-                padding: 1rem;
-            }
-
-            .generator-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .preview-sidebar {
-                position: relative;
-                top: 0;
-                margin-top: 2rem;
-            }
-
-            .level-inputs {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
             }
 
             .action-bar-floating {
@@ -593,14 +431,6 @@
             .btn-save-final {
                 width: 100%;
                 justify-content: center;
-            }
-
-            .leaf-node {
-                padding: 0.6rem;
-            }
-
-            .node-icon-caret {
-                font-size: 0.7rem;
             }
         }
     </style>
@@ -628,12 +458,27 @@
                     <i class="ph ph-fold-list"></i>
                 </button>
             </div>
-            <button class="btn-smart-generate" onclick="openSmartGenerator('')" style="background: white; color: var(--primary); border: 1px solid var(--primary);">
-                <i class="ph ph-plus-circle"></i> Novo Nível Principal
+            <!-- Novo botão Principal que usa a lógica in-line -->
+            <button class="btn-save-final" style="background: white; color: var(--primary); border: 2px solid var(--primary); padding: 0.6rem 1.5rem; border-radius: 12px; font-weight: 600; box-shadow: none;" onclick="focusOnSkeleton('root')">
+                <i class="ph ph-plus-circle"></i> Novo Nível Raiz
             </button>
-            <button class="btn-smart-generate" onclick="openSmartGenerator('')">
-                <i class="ph ph-sparkle"></i> Gerador Inteligente
-            </button>
+        </div>
+    </div>
+
+    <!-- Selection Overlay for Cloning Mode -->
+    <div id="selectionOverlay" class="selection-overlay glass-card" style="background: white; border-top: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="background: var(--primary-light); color: var(--primary-dark); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <i class="ph ph-copy"></i>
+            </div>
+            <div>
+                <strong style="display: block; font-size: 1rem; color: var(--text-main);">Modo de Replicação</strong>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Selecione os destinos clicando neles na árvore.</span>
+            </div>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 0.75rem;">
+            <button class="btn-save-final" style="background: #f1f5f9; color: var(--text-muted); border: none; padding: 0.5rem 1.25rem;" onclick="cancelSelectionMode()">Cancelar</button>
+            <button class="btn-save-final" style="padding: 0.5rem 1.25rem;" id="btnConfirmClone" onclick="confirmCloning()">Confirmar (<span id="selectedCount">0</span>)</button>
         </div>
     </div>
 
@@ -671,67 +516,9 @@
                 <i class="ph ph-tree-structure" style="font-size: 2.5rem; color: #94a3b8;"></i>
             </div>
             <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Nenhum layout físico encontrado</h3>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">Comece gerando a estrutura inicial para este endereçamento.</p>
-            <button class="btn-smart-generate" onclick="openSmartGenerator('')" style="margin: 0 auto;">
-                <i class="ph ph-plus"></i> Iniciar Criação
-            </button>
-        </div>
-    </div>
-
-    <!-- Smart Generator Modal -->
-    <div class="modal-overlay" id="smartGeneratorModal">
-        <div class="modal-card glass-card" style="background: white !important;">
-            <div class="modal-header">
-                <div style="display:flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h2 style="margin:0; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.75rem;">
-                            <i class="ph ph-sparkle" style="color: var(--primary);"></i> Gerador Inteligente
-                        </h2>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
-                            Defina múltiplos níveis de hierarquia para gerar endereços em massa.
-                        </p>
-                    </div>
-                    <button class="btn-back" style="width: 36px; height: 36px; border-radius: 10px;" onclick="closeSmartGenerator()">
-                        <i class="ph ph-x"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="wizParentId" value="">
-                <div class="generator-grid">
-                    <div class="left-panel">
-                        <div class="levels-container" id="levelsContainer">
-                            <!-- Levels will be injected here -->
-                        </div>
-                        <button class="btn-add-level" onclick="addNewLevelRow()" style="margin-top: 1.5rem; width: 100%;">
-                            <i class="ph ph-plus-circle"></i> Adicionar Próximo Nível
-                        </button>
-                        
-                        <div style="margin-top: 2rem; padding: 1rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; display: flex; gap: 1rem; align-items: flex-start;">
-                            <i class="ph ph-info" style="color: #d97706; font-size: 1.5rem; margin-top: 2px;"></i>
-                            <div style="font-size: 0.85rem; color: #92400e; line-height: 1.5;">
-                                <strong>Dica de Endereçáveis:</strong> O último nível da hierarquia será marcado automaticamente como endereçável (folha). Se você criar apenas um nível, ele será a folha.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="right-panel">
-                        <div class="preview-sidebar">
-                            <h4 style="margin: 0 0 1rem 0; font-weight: 700; color: var(--text-main); font-size: 0.85rem; text-transform: uppercase;">Resumo da Operação</h4>
-                            <div class="preview-stat" id="previewNodeTotal">0</div>
-                            <div class="preview-stat-label">Novos endereços serão gerados</div>
-                            
-                            <h4 style="margin: 1.5rem 0 0.75rem 0; font-weight: 700; color: var(--text-main); font-size: 0.8rem;">Exemplo de Formatação</h4>
-                            <div class="preview-list" id="samplePreviewList">
-                                <em>Nenhum dado...</em>
-                            </div>
-
-                            <button class="btn-save-final" id="btnApplyPreview" onclick="applyPreviewNodes()" style="width: 100%; margin-top: 1.5rem;">
-                                <i class="ph ph-plus-circle"></i> Injetar na Árvore
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Adicione o primeiro nível agora mesmo.</p>
+            <div class="skeleton-node" style="margin: 0 auto;" onclick="focusOnSkeleton('root')">
+                <i class="ph ph-plus"></i> <input type="text" placeholder="Novo Nó..." onkeydown="handleSkeletonKey(event, '')" id="skeleton_root">
             </div>
         </div>
     </div>
@@ -752,7 +539,7 @@
 
     <!-- SQL Final Dialog -->
     <div class="modal-overlay" id="sqlFinalModal">
-        <div class="modal-card" style="max-width: 700px; background: white !important;">
+        <div class="modal-card glass-card" style="max-width: 700px; background: white !important;">
             <div class="modal-header">
                 <h3 style="margin:0; font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.75rem;">
                     <i class="ph ph-check-circle"></i> Script Consolidado
@@ -760,7 +547,7 @@
             </div>
             <div class="modal-body">
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                    Abaixo está o script SQL para efetivar as mudanças na base de dados. Execute-o via console ou ferramenta de DBA.
+                    Abaixo está o script SQL para efetivar as mudanças na base de dados.
                 </p>
                 <div style="position: relative;">
                     <textarea id="sqlFinalContent" readonly style="width: 100%; height: 300px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px;"></textarea>
@@ -785,7 +572,9 @@
         const enderecamentoId = '{{ $enderecamentoId }}';
         
         window.layoutData = [];
-        let levelCount = 0;
+        let selectionMode = false;
+        let selectionSourceId = null;
+        let selectedTargets = [];
 
         document.addEventListener('DOMContentLoaded', fetchTreeData);
 
@@ -843,18 +632,37 @@
                 html += generateTreeHtml(rootNode);
             });
             
+            // Add root skeleton
+            html += `
+                <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('')">
+                    <i class="ph ph-plus"></i>
+                    <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '')" id="skeleton_">
+                </div>
+            `;
+
             root.innerHTML = html;
         }
 
         function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
-            const addBtn = `<button class="btn-inline-add" onclick="event.preventDefault(); openSmartGenerator('${node.id}')" title="Gerar Filhos"><i class="ph ph-plus"></i></button>`;
+            
+            // Clone and Add Buttons
+            const actionBtns = `
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions">
+                    <button class="btn-inline-add" style="background: #f8fafc; color: #64748b;" onclick="event.preventDefault(); event.stopPropagation(); toggleSelectionMode('${node.id}')" title="Replicar Estrutura">
+                        <i class="ph ph-copy"></i>
+                    </button>
+                    <button class="btn-inline-add" onclick="event.preventDefault(); event.stopPropagation(); focusOnSkeleton('${node.id}')" title="Adicionar Filho">
+                        <i class="ph ph-plus"></i>
+                    </button>
+                </div>
+            `;
 
             if (!node.children || node.children.length === 0) {
                 const aliasNode = node.alias && node.alias !== node.nome ? `<span class="node-alias">${node.alias}</span>` : '';
                 return `
-                    <div class="leaf-node ${isDraft}">
+                    <div class="leaf-node ${isDraft}" id="node_${node.id}" onclick="handleNodeClick('${node.id}')">
                         <i class="ph ph-check-circle leaf-icon-status"></i>
                         <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem;">
                             <strong style="font-weight: 600;">${node.nome}</strong>
@@ -862,32 +670,211 @@
                             ${aliasNode}
                             ${draftBadge}
                         </div>
-                        ${addBtn}
+                        ${actionBtns}
                     </div>
+                    <div id="kids_${node.id}" style="display:none"></div>
                 `;
             }
 
             let kidsHtml = '';
             node.children.forEach(c => kidsHtml += generateTreeHtml(c));
+            
+            // Skeleton for this container
+            kidsHtml += `
+                <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('${node.id}')">
+                    <i class="ph ph-plus"></i>
+                    <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '${node.id}')" id="skeleton_${node.id}">
+                </div>
+            `;
 
             return `
-                <details class="tree-node ${isDraft}" open>
-                    <summary class="tree-summary">
+                <details class="tree-node ${isDraft}" id="node_${node.id}" open>
+                    <summary class="tree-summary" onclick="handleNodeClick('${node.id}')">
                         <i class="ph ph-caret-right node-icon-caret"></i>
                         <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
                         <span style="font-weight: 600;">${node.nome}</span>
                         <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                         ${draftBadge}
-                        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
-                            <button class="btn-inline-add" style="background: #f8fafc; color: #64748b;" onclick="event.preventDefault(); cloneStructure('${node.id}')" title="Clonar Estrutura">
-                                <i class="ph ph-copy"></i>
-                            </button>
-                            ${addBtn}
-                        </div>
+                        ${actionBtns}
                     </summary>
-                    ${kidsHtml}
+                    <div class="node-children">
+                        ${kidsHtml}
+                    </div>
                 </details>
             `;
+        }
+
+        function handleNodeClick(nodeId) {
+            if (!selectionMode) return;
+            
+            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
+            const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
+            
+            if (node.parent_id !== source.parent_id || node.id === source.id) return;
+
+            const idx = selectedTargets.indexOf(nodeId);
+            const el = document.getElementById('node_' + nodeId);
+            const summary = el.querySelector('.tree-summary') || el;
+
+            if (idx > -1) {
+                selectedTargets.splice(idx, 1);
+                summary.classList.remove('selected-target');
+            } else {
+                selectedTargets.push(nodeId);
+                summary.classList.add('selected-target');
+            }
+            
+            document.getElementById('selectedCount').textContent = selectedTargets.length;
+        }
+
+        function focusOnSkeleton(parentId) {
+            const input = document.getElementById('skeleton_' + parentId);
+            if (input) {
+                input.focus();
+                // Ensure parent is open if it's a details
+                const details = input.closest('details');
+                if (details) details.open = true;
+            }
+        }
+
+        function handleSkeletonKey(e, parentId) {
+            if (e.key === 'Enter') {
+                const name = e.target.value.trim();
+                if (name) {
+                    addNodeInLine(parentId, name);
+                    e.target.value = '';
+                }
+            }
+        }
+
+        function addNodeInLine(parentId, name) {
+            let baseFormat = '';
+            if (parentId) {
+                const p = window.layoutData.find(n => String(n.id) === String(parentId));
+                if (p) baseFormat = p.formatado;
+            }
+
+            const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
+            const formatado = baseFormat ? baseFormat + '-' + name : name;
+
+            const newNode = {
+                id: newId,
+                parent_id: parentId || null,
+                nome: name,
+                formatado: formatado,
+                is_new: true,
+                is_enderecavel: false // Default to false for now, logic can be added later
+            };
+
+            window.layoutData.push(newNode);
+            renderTree();
+            updateUIStats();
+            
+            // Re-focus skeleton for next add
+            setTimeout(() => focusOnSkeleton(parentId), 50);
+        }
+
+        function toggleSelectionMode(sourceId) {
+            selectionMode = true;
+            selectionSourceId = sourceId;
+            selectedTargets = [];
+            
+            const source = window.layoutData.find(n => String(n.id) === String(sourceId));
+            document.body.classList.add('selection-mode');
+            document.getElementById('selectionOverlay').style.display = 'flex';
+            document.getElementById('selectedCount').textContent = '0';
+
+            // Highlight possible targets (siblings)
+            window.layoutData.forEach(node => {
+                if (node.parent_id === source.parent_id && node.id !== source.id) {
+                    const el = document.getElementById('node_' + node.id);
+                    if (el) {
+                        const summary = el.querySelector('.tree-summary') || el;
+                        summary.classList.add('selectable-sibling');
+                    }
+                }
+            });
+        }
+
+        function cancelSelectionMode() {
+            selectionMode = false;
+            document.body.classList.remove('selection-mode');
+            document.getElementById('selectionOverlay').style.display = 'none';
+            
+            // Clean classes
+            document.querySelectorAll('.selectable-sibling, .selected-target').forEach(el => {
+                el.classList.remove('selectable-sibling', 'selected-target');
+            });
+        }
+
+        function confirmCloning() {
+            if (selectedTargets.length === 0) return;
+            
+            const sourceId = selectionSourceId;
+            const children = findDescendants(sourceId);
+            
+            if (children.length === 0) {
+                alert("Este nó não possui estrutura de filhos para clonar.");
+                cancelSelectionMode();
+                return;
+            }
+
+            let newClones = [];
+            selectedTargets.forEach(targetId => {
+                const target = window.layoutData.find(n => String(n.id) === String(targetId));
+                const clones = replicateChildren(sourceId, targetId, target.formatado);
+                newClones = newClones.concat(clones);
+            });
+
+            window.layoutData = window.layoutData.concat(newClones);
+            renderTree();
+            updateUIStats();
+            cancelSelectionMode();
+            showToast(`Estrutura replicada para ${selectedTargets.length} destinos!`);
+        }
+
+        function findDescendants(parentId) {
+            let results = [];
+            const kids = window.layoutData.filter(n => String(n.parent_id) === String(parentId));
+            kids.forEach(k => {
+                results.push(k);
+                results = results.concat(findDescendants(k.id));
+            });
+            return results;
+        }
+
+        function replicateChildren(sourceParentId, targetParentId, targetBaseFormat) {
+            let clones = [];
+            const kids = window.layoutData.filter(n => String(n.parent_id) === String(sourceParentId));
+            
+            kids.forEach(k => {
+                const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
+                const newFormat = targetBaseFormat ? targetBaseFormat + '-' + k.nome : k.nome;
+                
+                const clone = {
+                    ...k,
+                    id: newId,
+                    parent_id: targetParentId,
+                    formatado: newFormat,
+                    is_new: true
+                };
+                clones.push(clone);
+                
+                const subClones = replicateChildren(k.id, newId, newFormat);
+                clones = clones.concat(subClones);
+            });
+            
+            return clones;
+        }
+
+        function expandAllNodes() {
+            const nodes = document.querySelectorAll('details.tree-node');
+            nodes.forEach(n => n.open = true);
+        }
+
+        function collapseAllNodes() {
+            const nodes = document.querySelectorAll('details.tree-node');
+            nodes.forEach(n => n.open = false);
         }
 
         function updateUIStats() {
@@ -899,205 +886,6 @@
                 actionBar.style.display = 'flex';
             } else {
                 actionBar.style.display = 'none';
-            }
-        }
-
-        // --- SMART GENERATOR LOGIC ---
-
-        const BASE_LAYOUT_TYPES = [
-            { id: 1, name: 'Nível 1' },
-            { id: 2, name: 'Nível 2' },
-            { id: 3, name: 'Nível 3' },
-            { id: 4, name: 'Nível 4' },
-            { id: 5, name: 'Nível 5' },
-            { id: 6, name: 'Nível 6' }
-        ];
-
-        function openSmartGenerator(parentId) {
-            document.getElementById('wizParentId').value = parentId;
-            document.getElementById('levelsContainer').innerHTML = '';
-            levelCount = 0;
-            
-            // Start with one level always
-            addNewLevelRow();
-            
-            document.getElementById('smartGeneratorModal').style.display = 'flex';
-            updatePreviewStats();
-        }
-
-        function closeSmartGenerator() {
-            document.getElementById('smartGeneratorModal').style.display = 'none';
-        }
-
-        function addNewLevelRow() {
-            levelCount++;
-            const container = document.getElementById('levelsContainer');
-            const div = document.createElement('div');
-            div.className = 'level-row';
-            div.id = `level_row_${levelCount}`;
-            
-            // Suggest type based on count
-            const suggestedType = levelCount <= 6 ? levelCount : 6;
-
-            div.innerHTML = `
-                <div class="level-row-header">
-                    <span class="level-row-title">Configuração do Nível ${levelCount}</span>
-                    ${levelCount > 1 ? `<button class="btn-remove-level" onclick="removeLevelRow(${levelCount})"><i class="ph ph-trash"></i></button>` : ''}
-                </div>
-                <div class="level-inputs">
-                    <div class="level-input-group">
-                        <label>Identificador Tipo</label>
-                        <select onchange="updatePreviewStats()">
-                            ${BASE_LAYOUT_TYPES.map(t => `<option value="${t.id}" ${t.id === suggestedType ? 'selected' : ''}>${t.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="level-input-group">
-                        <label>Início (De)</label>
-                        <input type="text" value="01" placeholder="Ex: 01" oninput="updatePreviewStats()">
-                    </div>
-                    <div class="level-input-group">
-                        <label>Fim (Até)</label>
-                        <input type="text" value="10" placeholder="Ex: 10" oninput="updatePreviewStats()">
-                    </div>
-                </div>
-            `;
-            container.appendChild(div);
-            updatePreviewStats();
-        }
-
-        function removeLevelRow(id) {
-            const row = document.getElementById(`level_row_${id}`);
-            if (row) row.remove();
-            updatePreviewStats();
-        }
-
-        function collectLevelData() {
-            const rows = document.querySelectorAll('.level-row');
-            const levels = [];
-            rows.forEach(row => {
-                const inputs = row.querySelectorAll('input, select');
-                levels.push({
-                    tipo_componente: parseInt(inputs[0].value),
-                    inicio: inputs[1].value,
-                    fim: inputs[2].value
-                });
-            });
-            return levels;
-        }
-
-        function updatePreviewStats() {
-            const levels = collectLevelData();
-            let total = 0;
-            let sampleText = "";
-            
-            if (levels.length > 0) {
-                // Calculation logic
-                let combos = 1;
-                levels.forEach(L => {
-                    let start = parseInt(L.inicio);
-                    let end = parseInt(L.fim);
-                    if (!isNaN(start) && !isNaN(end)) {
-                        combos *= (Math.abs(end - start) + 1);
-                    } else {
-                        // handle chars
-                        combos *= (L.fim.charCodeAt(0) - L.inicio.charCodeAt(0) + 1);
-                    }
-                });
-                
-                // IF it's under a parent, we must multiply by the number of parents if it's a replication
-                // (For simplicity in preview, we show per-target count if target exists)
-                total = combos;
-                
-                // Simple Sample generator
-                sampleText = generateSampleDraft(levels);
-            }
-
-            document.getElementById('previewNodeTotal').textContent = total;
-            document.getElementById('samplePreviewList').innerHTML = sampleText || '<em>Formatando...</em>';
-        }
-
-        function generateSampleDraft(levels) {
-            let names = [""];
-            levels.forEach((L, idx) => {
-                let start = L.inicio;
-                let end = L.fim;
-                let pad = start.length > 1 && start.startsWith('0') ? start.length : 0;
-                
-                let startVal, endVal, isNum = false;
-                if (!isNaN(parseInt(start)) && !isNaN(parseInt(end))) {
-                    startVal = parseInt(start); endVal = parseInt(end); isNum = true;
-                } else {
-                    startVal = start.charCodeAt(0); endVal = end.charCodeAt(0);
-                }
-
-                let newNames = [];
-                // Only take first 2 for preview if names get too large
-                let countToTake = isNum ? Math.min(Math.abs(endVal - startVal) + 1, 2) : 2;
-
-                for (let i = 0; i < countToTake; i++) {
-                    let currentVal = startVal + i;
-                    let strVal = isNum ? String(currentVal) : String.fromCharCode(currentVal);
-                    if (pad > 0 && isNum) strVal = strVal.padStart(pad, '0');
-                    
-                    names.forEach(n => {
-                        newNames.push((n ? n + '-' : '') + strVal);
-                    });
-                }
-                names = newNames;
-            });
-            
-            return names.map(n => `<div><i class="ph ph-dot" style="color:var(--primary)"></i> ${n}</div>`).join('') + 
-                   (names.length > 5 ? '<div>...</div>' : '');
-        }
-
-        async function applyPreviewNodes() {
-            const parentId = document.getElementById('wizParentId').value;
-            const levels = collectLevelData();
-            const btn = document.getElementById('btnApplyPreview');
-            
-            btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Injetando...';
-            btn.disabled = true;
-
-            try {
-                // Get base formatting if parent exists
-                let baseFormat = '';
-                if (parentId) {
-                    const p = window.layoutData.find(n => String(n.id) === String(parentId));
-                    if (p) baseFormat = p.formatado;
-                }
-
-                const response = await fetch('/api/enderecamentos/layout-fisico/preview-nodes', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json', 
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        tenant_id: tenantId,
-                        armazem_id: armazemId,
-                        enderecamento_id: enderecamentoId,
-                        base_parent_id: parentId,
-                        base_parent_format: baseFormat,
-                        niveis: levels
-                    })
-                });
-                
-                const result = await response.json();
-                if (result.success) {
-                    window.layoutData = window.layoutData.concat(result.data);
-                    renderTree();
-                    updateUIStats();
-                    closeSmartGenerator();
-                    showToast("Preview injetado com sucesso!");
-                } else {
-                    alert('Erro ao gerar: ' + result.message);
-                }
-            } catch (e) {
-                alert('Falha na requisição de preview.');
-            } finally {
-                btn.innerHTML = '<i class="ph ph-plus-circle"></i> Injetar na Árvore';
-                btn.disabled = false;
             }
         }
 
@@ -1154,103 +942,7 @@
         }
 
         function showToast(msg) {
-            // Simplified toast for now, can be improved with a real library
             alert(msg);
-        }
-
-        function expandAllNodes() {
-            const nodes = document.querySelectorAll('details.tree-node');
-            nodes.forEach(n => n.open = true);
-        }
-
-        function collapseAllNodes() {
-            const nodes = document.querySelectorAll('details.tree-node');
-            nodes.forEach(n => n.open = false);
-        }
-
-        async function cloneStructure(sourceId) {
-            const source = window.layoutData.find(n => String(n.id) === String(sourceId));
-            if (!source) return;
-
-            // Find siblings
-            const siblings = window.layoutData.filter(n => n.parent_id === source.parent_id && n.id !== source.id);
-            if (siblings.length === 0) {
-                alert("Não há irmãos para replicar esta estrutura.");
-                return;
-            }
-
-            const targetNames = prompt("Para quais as outras posições deste nível você deseja replicar a estrutura? Descreva os nomes separados por vírgula ou deixe vazio para ver a lista de irmãos disponíveis.\nEx: 03, 04, 05");
-            
-            if (targetNames === null) return; // Cancelled
-
-            let targets = [];
-            if (targetNames.trim() === "") {
-                const list = siblings.map(s => s.nome).join(", ");
-                alert("Irmãos disponíveis: " + list);
-                return;
-            } else {
-                const names = targetNames.split(",").map(n => n.trim().toLowerCase());
-                targets = siblings.filter(s => names.includes(s.nome.toLowerCase()));
-            }
-
-            if (targets.length === 0) {
-                alert("Nenhuma posição alvo correspondente encontrada.");
-                return;
-            }
-
-            // Find all descendants of source
-            const children = findDescendants(sourceId);
-            if (children.length === 0) {
-                alert("Este nível não possui estrutura de filhos para clonar.");
-                return;
-            }
-
-            // Replicate structure for each target
-            let newDrafts = [];
-            targets.forEach(t => {
-                const clones = replicateChildren(sourceId, t.id, t.formatado);
-                newDrafts = newDrafts.concat(clones);
-            });
-
-            window.layoutData = window.layoutData.concat(newDrafts);
-            renderTree();
-            updateUIStats();
-            showToast(`Estrutura replicada para ${targets.length} posições!`);
-        }
-
-        function findDescendants(parentId) {
-            let results = [];
-            const kids = window.layoutData.filter(n => String(n.parent_id) === String(parentId));
-            kids.forEach(k => {
-                results.push(k);
-                results = results.concat(findDescendants(k.id));
-            });
-            return results;
-        }
-
-        function replicateChildren(sourceParentId, targetParentId, targetBaseFormat) {
-            let clones = [];
-            const kids = window.layoutData.filter(n => String(n.parent_id) === String(sourceParentId));
-            
-            kids.forEach(k => {
-                const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
-                const newFormat = targetBaseFormat ? targetBaseFormat + '-' + k.nome : k.nome;
-                
-                const clone = {
-                    ...k,
-                    id: newId,
-                    parent_id: targetParentId,
-                    formatado: newFormat,
-                    is_new: true
-                };
-                clones.push(clone);
-                
-                // Recursive call for sub-children
-                const subClones = replicateChildren(k.id, newId, newFormat);
-                clones = clones.concat(subClones);
-            });
-            
-            return clones;
         }
     </script>
 @endpush
