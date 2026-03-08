@@ -639,6 +639,21 @@
             </div>
         </div>
     </div>
+    <!-- Notification Modal (Replaces alert) -->
+    <div class="modal-overlay" id="noticeModal">
+        <div class="modal-card glass-card" style="max-width: 450px; background: white !important;">
+            <div class="modal-body" style="text-align: center; padding: 2.5rem;">
+                <div id="noticeIcon" style="width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+                    <i class="ph ph-info"></i>
+                </div>
+                <h3 id="noticeTitle" style="margin-bottom: 0.5rem; font-weight: 800; color: var(--text-main);">Notificação</h3>
+                <p id="noticeMessage" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;"></p>
+            </div>
+            <div class="modal-footer" style="padding: 1rem 2rem 2rem; border: none; display: flex; justify-content: center;">
+                <button class="btn-save-final" style="width: 100%; justify-content: center;" onclick="closeNoticeModal()">Entendi</button>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -846,7 +861,7 @@
                 if (name.includes('-')) {
                     // If user manually typed a dash, it MUST start with parent prefix
                     if (!name.startsWith(prefix)) {
-                        alert(`Erro: Entrada inválida. Para o pai "${parentNode.nome}", o nome deve começar com "${prefix}".`);
+                        showNotice('Entrada Inválida', `Para o pai "${parentNode.nome}", o nome deve começar com "${prefix}".`, 'error');
                         return;
                     }
                 } else {
@@ -857,7 +872,7 @@
                 // If it's a root node, we don't allow dashes initially to keep it clean, 
                 // OR we just accept it if it's the top level.
                 if (name.includes('-')) {
-                    alert('Erro: Níveis raiz não devem conter o caractere "-" manualmente.');
+                    showNotice('Entrada Inválida', 'Níveis raiz não devem conter o caractere "-" manualmente.', 'error');
                     return;
                 }
             }
@@ -869,7 +884,7 @@
             );
             
             if (exists) {
-                alert(`Erro: O nome "${finalName}" já existe neste nível.`);
+                showNotice('Nome Duplicado', `O nome "${finalName}" já existe neste nível.`, 'error');
                 return;
             }
 
@@ -936,7 +951,7 @@
             const children = findDescendants(sourceId);
             
             if (children.length === 0) {
-                alert("Este nó não possui estrutura de filhos para clonar.");
+                showNotice('Nada para Clonar', "Este nó não possui estrutura de filhos para replicar.", 'info');
                 cancelSelectionMode();
                 return;
             }
@@ -1047,10 +1062,10 @@
                     document.getElementById('sqlFinalContent').value = res.sql;
                     document.getElementById('sqlFinalModal').style.display = 'flex';
                 } else {
-                    alert('Erro no servidor: ' + res.message);
+                    showNotice('Erro no Servidor', res.message, 'error');
                 }
             } catch (e) {
-                alert('Erro de conexão ao consolidar.');
+                showNotice('Erro de Conexão', 'Não foi possível consolidar as mudanças.', 'error');
             } finally {
                 btn.innerHTML = original;
                 btn.disabled = false;
@@ -1075,7 +1090,44 @@
         }
 
         function showToast(msg) {
-            alert(msg);
+            showNotice('Sucesso', msg, 'success');
+        }
+
+        function showNotice(title, message, type = 'info') {
+            const modal = document.getElementById('noticeModal');
+            const iconWrap = document.getElementById('noticeIcon');
+            const icon = iconWrap.querySelector('i');
+            const titleEl = document.getElementById('noticeTitle');
+            const msgEl = document.getElementById('noticeMessage');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            // Reset classes
+            iconWrap.className = '';
+            iconWrap.style.background = '';
+            iconWrap.style.color = '';
+            icon.className = 'ph';
+
+            if (type === 'error') {
+                iconWrap.style.background = '#fee2e2';
+                iconWrap.style.color = 'var(--danger)';
+                icon.classList.add('ph-warning-circle');
+            } else if (type === 'success') {
+                iconWrap.style.background = '#f0fdf4';
+                iconWrap.style.color = 'var(--success)';
+                icon.classList.add('ph-check-circle');
+            } else {
+                iconWrap.style.background = 'var(--primary-light)';
+                iconWrap.style.color = 'var(--primary-dark)';
+                icon.classList.add('ph-info');
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeNoticeModal() {
+            document.getElementById('noticeModal').style.display = 'none';
         }
 
         function openHelpModal() {
