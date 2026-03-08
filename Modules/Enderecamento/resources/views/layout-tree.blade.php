@@ -506,6 +506,103 @@
         summary:hover .btn-inline-add, .leaf-node:hover .btn-inline-add {
             opacity: 1;
         }
+
+        /* --- MOBILE RESPONSIVENESS (iPhone) --- */
+        @media (max-width: 768px) {
+            .layout-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .layout-header div:last-child {
+                width: 100%;
+                margin-left: 0 !important;
+            }
+
+            .btn-smart-generate {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .info-cards {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .tree-container {
+                padding: 1rem;
+            }
+
+            .tree-node, .leaf-node {
+                margin-left: 0.75rem !important;
+            }
+
+            .tree-node::before, .leaf-node::before {
+                width: 0.75rem;
+                left: -0.75rem;
+            }
+
+            /* Modal Adjustments */
+            .modal-overlay {
+                padding: 0.5rem;
+            }
+
+            .modal-card {
+                max-height: 95vh;
+                border-radius: 12px;
+            }
+
+            .modal-header {
+                padding: 1rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .generator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-sidebar {
+                position: relative;
+                top: 0;
+                margin-top: 2rem;
+            }
+
+            .level-inputs {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .action-bar-floating {
+                width: 90%;
+                padding: 0.75rem 1rem;
+                gap: 1rem;
+                flex-direction: column;
+                bottom: 1rem;
+                border-radius: 20px;
+            }
+
+            .action-bar-floating div[style*="width: 1px"] {
+                display: none;
+            }
+
+            .btn-save-final {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .leaf-node {
+                padding: 0.6rem;
+            }
+
+            .node-icon-caret {
+                font-size: 0.7rem;
+            }
+        }
     </style>
 @endpush
 
