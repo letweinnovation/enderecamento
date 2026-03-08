@@ -676,6 +676,12 @@
             const loading = document.getElementById('treeLoading');
             const empty = document.getElementById('treeEmptyState');
 
+            // Capture open states before rendering
+            const openStates = {};
+            document.querySelectorAll('details[id]').forEach(d => {
+                openStates[d.id] = d.open;
+            });
+
             loading.style.display = 'none';
 
             if (!window.layoutData || window.layoutData.length === 0) {
@@ -717,6 +723,12 @@
             `;
 
             root.innerHTML = html;
+
+            // Restore open states
+            Object.keys(openStates).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.open = openStates[id];
+            });
         }
 
         function generateTreeHtml(node) {
@@ -807,9 +819,6 @@
             const input = document.getElementById('skeleton_' + parentId);
             if (input) {
                 input.focus();
-                // Ensure parent is open if it's a details
-                const details = input.closest('details');
-                if (details) details.open = true;
             }
         }
 
