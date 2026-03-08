@@ -985,33 +985,40 @@
             const kids = window.layoutData.filter(n => String(n.parent_id) === String(sourceParentId));
             
             kids.forEach(k => {
-                const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
-                
                 // Smart Name Adjustment: 
-                // If child name starts with old parent name (e.g. "02-01" under "02"),
-                // replace it with new parent name (e.g. "03-01" under "03")
                 let newName = k.nome;
                 if (sourceParentName && targetParentName && k.nome.startsWith(sourceParentName)) {
                     newName = targetParentName + k.nome.substring(sourceParentName.length);
                 }
 
-                // If new name doesn't start with parent name and we're not at root, 
-                // we'll rely on formatado to show the relationship, but usually 
-                // we want the relative format to be correct.
                 const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? newName.split('-').pop() : newName) : newName;
-                
-                const clone = {
-                    ...k,
-                    id: newId,
-                    parent_id: targetParentId,
-                    nome: newName,
-                    formatado: newFormat,
-                    is_new: true
-                };
-                clones.push(clone);
-                
-                const subClones = replicateChildren(k.id, newId, newFormat, k.nome, newName);
-                clones = clones.concat(subClones);
+
+                // Check if a node with this name already exists under the target parent
+                const existing = window.layoutData.find(n => 
+                    String(n.parent_id) === String(targetParentId) && 
+                    n.nome.toLowerCase() === newName.toLowerCase()
+                );
+
+                if (existing) {
+                    // MERGE: Node already exists, don't clone it, but clone its children recursively to this existing node
+                    const subClones = replicateChildren(k.id, existing.id, existing.formatado, k.nome, newName);
+                    clones = clones.concat(subClones);
+                } else {
+                    // CLONE: Node doesn't exist, create it
+                    const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
+                    const clone = {
+                        ...k,
+                        id: newId,
+                        parent_id: targetParentId,
+                        nome: newName,
+                        formatado: newFormat,
+                        is_new: true
+                    };
+                    clones.push(clone);
+                    
+                    const subClones = replicateChildren(k.id, newId, newFormat, k.nome, newName);
+                    clones = clones.concat(subClones);
+                }
             });
             
             return clones;
