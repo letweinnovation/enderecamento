@@ -571,6 +571,13 @@
                 justify-content: center;
             }
         }
+        .ph-spin {
+            animation: ph-spin 2s infinite linear;
+        }
+        @keyframes ph-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 @endpush
 
@@ -770,6 +777,7 @@
         let selectionSourceId = null;
         let selectionSourceDepth = null;
         let selectedTargets = [];
+        let globalAddressableDepth = null;
 
         document.addEventListener('DOMContentLoaded', fetchTreeData);
 
@@ -780,6 +788,13 @@
 
                 if (res.success) {
                     window.layoutData = res.data;
+                    
+                    // Identify global addressable depth
+                    const dbAddressables = window.layoutData.filter(n => !n.is_new && n.is_enderecavel);
+                    if (dbAddressables.length > 0) {
+                        globalAddressableDepth = (dbAddressables[0].formatado || "").split('-').length;
+                    }
+
                     renderTree();
                     updateUIStats();
                 } else {
@@ -879,17 +894,24 @@
             if (onlyDrafts) {
                 document.querySelectorAll('details').forEach(d => d.open = true);
             }
-        }
         function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
-            const enderecavelBadge = (node.is_enderecavel || (!node.is_new && node.is_enderecavel)) ? '<span class="enderecavel-badge">Endereçável</span>' : '';
             const cloningBadge = (selectionMode && String(selectionSourceId) === String(node.id)) 
                 ? '<span class="cloning-badge">Clonando...</span>' 
                 : '';
             
             const hasChildren = node.children && node.children.length > 0;
-            
+            const currentDepth = (node.formatado || "").split('-').length;
+            const isAtAddressableLevel = globalAddressableDepth && currentDepth === globalAddressableDepth;
+            const checkColor = node.is_enderecavel ? 'var(--success)' : '#cbd5e1';
+            const checkIcon = node.is_enderecavel ? 'ph-check-circle' : 'ph-circle';
+            const enderecavelIcon = `
+                <div class="enderecavel-indicator" title="${node.is_enderecavel ? 'Endereçável' : 'Não Endereçável'}">
+                    <i class="ph ${checkIcon}" style="color: ${checkColor}; font-size: 1.1rem;"></i>
+                </div>
+            `;
+
             // Clone and Add Buttons
             let actionBtns = `
                 <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions">
@@ -902,10 +924,6 @@
                         </button>
                     ` : ''}
                     ${node.is_new ? `
-                        <button class="btn-inline-add" style="background: ${node.is_enderecavel ? '#dcfce7' : '#f8fafc'}; color: ${node.is_enderecavel ? '#16a34a' : '#64748b'};" 
-                                onclick="event.preventDefault(); event.stopPropagation(); toggleEnderecavel('${node.id}')" title="Tornar Endereçável">
-                            <i class="ph ph-check"></i>
-                        </button>
                         <button class="btn-inline-add" style="background: #fee2e2; color: #dc2626;" 
                                 onclick="event.preventDefault(); event.stopPropagation(); deleteDraftNode('${node.id}')" title="Remover Rascunho">
                             <i class="ph ph-trash"></i>
@@ -950,12 +968,12 @@
                         <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" 
                              onclick="event.stopPropagation(); handleNodeClick('${node.id}')" 
                              onmousedown="event.stopPropagation()">
+                            ${enderecavelIcon}
                             <i class="ph ${iconClass}" style="color: ${iconColor}; font-size: 1.1rem;"></i>
                             <span style="font-weight: 600;">${node.nome}</span>
                             ${displayFormatado}
                             ${displayAlias}
                             ${draftBadge}
-                            ${enderecavelBadge}
                             ${cloningBadge}
                             ${selectionMode && String(selectionSourceId) !== String(node.id) && (node.formatado.split('-').length !== selectionSourceDepth - 1) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>
@@ -1025,11 +1043,8 @@
         }
 
         function toggleEnderecavel(nodeId) {
-            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
-            if (!node || !node.is_new) return;
-
-            node.is_enderecavel = !node.is_enderecavel;
-            renderTree();
+            // Disabled: Now handled automatically.
+            return;
         }
 
         function focusOnSkeleton(parentId) {
@@ -1103,13 +1118,16 @@
             const suffix = finalName.includes('-') ? finalName.split('-').pop() : finalName;
             const formatado = baseFormat ? baseFormat + '-' + suffix : finalName;
 
+            const newNodeDepth = formatado.split('-').length;
+            const isEnderecavelManual = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
+
             const newNode = {
                 id: newId,
                 parent_id: parentId || null,
                 nome: finalName,
                 formatado: formatado,
                 is_new: true,
-                is_enderecavel: false
+                is_enderecavel: isEnderecavelManual
             };
 
             window.layoutData.push(newNode);
@@ -1213,6 +1231,8 @@
                 }
 
                 const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? newName.split('-').pop() : newName) : newName;
+                const newNodeDepth = newFormat.split('-').length;
+                const isEnderecavelClone = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
 
                 // Check if a node with this name already exists under the target parent
                 const existing = window.layoutData.find(n => 
@@ -1234,7 +1254,8 @@
                         nome: newName,
                         alias: newAlias,
                         formatado: newFormat,
-                        is_new: true
+                        is_new: true,
+                        is_enderecavel: isEnderecavelClone
                     };
                     clones.push(clone);
                     
