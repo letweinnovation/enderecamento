@@ -392,7 +392,14 @@ class EnderecoController extends Controller
 
                 $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
                     "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, LADO_ENDERECO, CUBAGEM_MAXIMA, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$nomeCurto}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, NULL, '{$now}', '{$userId}', '{$tenantId}', 0);";
+                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$nomeCurto}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, NULL, '{$now}', '{$userId}', '{$tenantId}', 0) " .
+                    "ON DUPLICATE KEY UPDATE " .
+                    "IND_DESABILITADO = 0, " .
+                    "LADO_ENDERECO = VALUES(LADO_ENDERECO), " .
+                    "ENDERECO = VALUES(ENDERECO), " .
+                    "IND_ENDERECAVEL = VALUES(IND_ENDERECAVEL), " .
+                    "GTI_MODIFIED_AT = VALUES(GTI_MODIFIED_AT), " .
+                    "GTI_MODIFIED_BY = VALUES(GTI_MODIFIED_BY);";
             }
 
             $sqlLines[] = "COMMIT;";
