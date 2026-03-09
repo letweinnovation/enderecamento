@@ -1022,7 +1022,7 @@
                             ${displayAlias}
                             ${draftBadge}
                             ${cloningBadge}
-                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (getNodeDepth(node.formatado) !== selectionSourceDepth) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
+                            ${selectionMode && !isSource && !isSelectable ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>
 
                         <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" 
