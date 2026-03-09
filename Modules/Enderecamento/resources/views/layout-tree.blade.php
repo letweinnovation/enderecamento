@@ -914,14 +914,14 @@
             
             const hasChildren = node.children && node.children.length > 0;
             const currentDepth = getNodeDepth(node.formatado);
+            // Icon for addressability (Only show on potential/actual addressable nodes)
             const isAtAddressableLevel = globalAddressableDepth && currentDepth === globalAddressableDepth;
-            const checkColor = node.is_enderecavel ? 'var(--success)' : '#cbd5e1';
-            const checkIcon = node.is_enderecavel ? 'ph-check-circle' : 'ph-circle';
-            const enderecavelIcon = `
+            const enderecavelIcon = (isAtAddressableLevel || node.is_enderecavel) ? `
                 <div class="enderecavel-indicator" title="${node.is_enderecavel ? 'Endereçável' : 'Não Endereçável'}">
-                    <i class="ph ${checkIcon}" style="color: ${checkColor}; font-size: 1.1rem;"></i>
+                    <i class="ph ${node.is_enderecavel ? 'ph-check-circle' : 'ph-circle'}" 
+                       style="color: ${node.is_enderecavel ? 'var(--success)' : '#cbd5e1'}; font-size: 1.1rem;"></i>
                 </div>
-            `;
+            ` : '';
 
             // Clone and Add Buttons
             let actionBtns = `
@@ -986,7 +986,7 @@
                             ${displayAlias}
                             ${draftBadge}
                             ${cloningBadge}
-                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (getNodeDepth(node.formatado) !== selectionSourceDepth - 1) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
+                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (getNodeDepth(node.formatado) !== selectionSourceDepth) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>
 
                         <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" 
@@ -1014,12 +1014,12 @@
             const node = window.layoutData.find(n => String(n.id) === String(nodeId));
             const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
             
-            // Allow cloning only to nodes at level: SourceDepth - 1
+            // Allow cloning only to nodes at EXACT SAME level
             if (!node || node.id === source.id) return;
 
             const targetDepth = getNodeDepth(node.formatado);
-            if (targetDepth !== selectionSourceDepth - 1) {
-                showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth - 1}.`, 'info');
+            if (targetDepth !== selectionSourceDepth) {
+                showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth}.`, 'info');
                 return;
             }
 
