@@ -1267,59 +1267,73 @@
         }
 
         function validateTreeStructure() {
-            // 1. Calculate Standard Depth from DB nodes
+            // 1. Calculate Standard Depth and Addressable Depth from DB nodes
             const dbNodes = window.layoutData.filter(n => !n.is_new);
             let standardDepth = 0;
+            let addressableDepth = 0;
+
             if (dbNodes.length > 0) {
-                // Find the max segments in 'formatado' among DB nodes
                 standardDepth = Math.max(...dbNodes.map(n => n.formatado.split('-').length));
+                // Find depth of nodes that are ALREADY addressable in DB
+                const dbAddressables = dbNodes.filter(n => n.is_enderecavel);
+                if (dbAddressables.length > 0) {
+                    addressableDepth = dbAddressables[0].formatado.split('-').length;
+                } else {
+                    addressableDepth = standardDepth;
+                }
             } else {
-                // If the tree is completely new, we allow the first root's depth to be the standard
                 const allNodes = window.layoutData;
                 if (allNodes.length > 0) {
                     standardDepth = Math.max(...allNodes.map(n => n.formatado.split('-').length));
+                    addressableDepth = standardDepth;
                 }
             }
 
             const errorLeaves = [];
             const errorDepth = [];
             const errorAddressableParent = [];
+            const errorInvalidLevel = [];
 
             window.layoutData.forEach(node => {
                 const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
                 const currentDepth = node.formatado.split('-').length;
 
                 if (hasChildren) {
-                    // Rule 4: Addressable nodes cannot have children
                     if (node.is_enderecavel) {
-                        errorAddressableParent.push(node.nome);
+                        errorAddressableParent.push(node.formatado);
                     }
                 } else {
-                    // It's a leaf node
-                    // Rule 1: Must be addressable
+                    // Leaf node
                     if (!node.is_enderecavel) {
-                        errorLeaves.push(node.nome);
+                        errorLeaves.push(node.formatado);
                     }
-                    // Rule 2: Must reach standard depth
                     if (currentDepth < standardDepth) {
-                        errorDepth.push(node.nome);
+                        errorDepth.push(node.formatado);
                     }
+                }
+
+                // Rule: Addressables MUST be at addressableDepth
+                if (node.is_enderecavel && currentDepth !== addressableDepth) {
+                    errorInvalidLevel.push(`${node.formatado} (Nível ${currentDepth}, esperado ${addressableDepth})`);
                 }
             });
 
-            if (errorLeaves.length > 0 || errorDepth.length > 0 || errorAddressableParent.length > 0) {
+            if (errorLeaves.length > 0 || errorDepth.length > 0 || errorAddressableParent.length > 0 || errorInvalidLevel.length > 0) {
                 let msg = "";
+                if (errorInvalidLevel.length > 0) {
+                    msg += `<b>Nível de Endereçamento Inválido:</b> Os seguintes nós estão marcados como "Endereçáveis" mas não seguem o padrão do banco (Nível ${addressableDepth}):<br>• ${errorInvalidLevel.join('<br>• ')}<br><br>`;
+                }
                 if (errorLeaves.length > 0) {
-                    msg += `Os seguintes nós precisam ser marcados como "Endereçáveis" (folhas): ${errorLeaves.join(', ')}. <br><br>`;
+                    msg += `<b>Falta Posição Endereçável:</b> Os seguintes caminhos não possuem uma folha marcada como "Endereçável":<br>• ${errorLeaves.join('<br>• ')}<br><br>`;
                 }
                 if (errorDepth.length > 0) {
-                    msg += `Os rascunhos precisam seguir o padrão de profundidade do banco (${standardDepth} níveis). Incompleto em: ${errorDepth.join(', ')}. <br><br>`;
+                    msg += `<b>Estrutura Incompleta:</b> Os seguintes rascunhos não atingiram a profundidade padrão (${standardDepth} níveis):<br>• ${errorDepth.join('<br>• ')}<br><br>`;
                 }
                 if (errorAddressableParent.length > 0) {
-                    msg += `Nós marcados como "Endereçáveis" não podem ter filhos: ${errorAddressableParent.join(', ')}.`;
+                    msg += `<b>Conflito de Hierarquia:</b> Nós marcados como "Endereçáveis" não podem ter filhos (devem ser folhas):<br>• ${errorAddressableParent.join('<br>• ')}`;
                 }
                 
-                showNotice('Estrutura Invalida', msg, 'error');
+                showNotice('Validação de Estrutura', msg, 'error');
                 return false;
             }
 
