@@ -898,7 +898,7 @@
             `;
 
             return `
-                <details class="tree-node ${isDraft}" id="node_${node.id}" open>
+                <details class="tree-node ${isDraft}" id="node_${node.id}">
                     <summary class="tree-summary" onclick="handleNodeClick('${node.id}')">
                         <i class="ph ph-caret-right node-icon-caret"></i>
                         <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
