@@ -879,7 +879,7 @@
                 document.querySelectorAll('details').forEach(d => d.open = true);
             }
         }
-
+        function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
             const enderecavelBadge = (node.is_enderecavel || (!node.is_new && node.is_enderecavel)) ? '<span class="enderecavel-badge">Endereçável</span>' : '';
