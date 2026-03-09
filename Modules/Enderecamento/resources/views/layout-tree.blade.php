@@ -914,16 +914,18 @@
 
             return `
                 <details class="tree-node ${isDraft}" id="node_${node.id}">
-                    <summary class="tree-summary" onclick="event.preventDefault()">
-                        <i class="ph ph-caret-right node-icon-caret" onclick="toggleNodeExpansion('${node.id}')"></i>
-                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="handleNodeClick('${node.id}')">
+                    <summary class="tree-summary" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
+                        <i class="ph ph-caret-right node-icon-caret" onclick="event.stopPropagation(); toggleNodeExpansion('${node.id}')" onmousedown="event.stopPropagation()"></i>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="event.stopPropagation(); handleNodeClick('${node.id}')" onmousedown="event.stopPropagation()">
                             <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
                             <span style="font-weight: 600;">${node.nome}</span>
                             <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                             ${draftBadge}
                             ${cloningBadge}
                         </div>
-                        ${actionBtns}
+                        <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+                            ${actionBtns}
+                        </div>
                     </summary>
                     <div class="node-children">
                         ${kidsHtml}
