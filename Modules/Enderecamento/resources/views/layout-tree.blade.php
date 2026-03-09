@@ -779,6 +779,15 @@
         let selectedTargets = [];
         let globalAddressableDepth = null;
 
+        // --- Helper Functions for Null Safety ---
+        function safeSplit(str, separator = '-') {
+            return (str || "").split(separator);
+        }
+
+        function getNodeDepth(str) {
+            return safeSplit(str).length;
+        }
+
         document.addEventListener('DOMContentLoaded', fetchTreeData);
 
         async function fetchTreeData() {
@@ -792,7 +801,7 @@
                     // Identify global addressable depth
                     const dbAddressables = window.layoutData.filter(n => !n.is_new && n.is_enderecavel);
                     if (dbAddressables.length > 0) {
-                        globalAddressableDepth = (dbAddressables[0].formatado || "").split('-').length;
+                        globalAddressableDepth = getNodeDepth(dbAddressables[0].formatado);
                     }
 
                     renderTree();
@@ -904,7 +913,7 @@
                 : '';
             
             const hasChildren = node.children && node.children.length > 0;
-            const currentDepth = (node.formatado || "").split('-').length;
+            const currentDepth = getNodeDepth(node.formatado);
             const isAtAddressableLevel = globalAddressableDepth && currentDepth === globalAddressableDepth;
             const checkColor = node.is_enderecavel ? 'var(--success)' : '#cbd5e1';
             const checkIcon = node.is_enderecavel ? 'ph-check-circle' : 'ph-circle';
@@ -957,7 +966,7 @@
                 ? `<span class="node-alias" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${node.alias}</span>` 
                 : '';
 
-            const iconClass = hasChildren ? 'ph-folder' : 'ph-check-circle';
+            const iconClass = hasChildren ? 'ph-folder' : 'ph-circle-wavy'; // Simplified icon logic
             const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
 
             return `
@@ -977,7 +986,7 @@
                             ${displayAlias}
                             ${draftBadge}
                             ${cloningBadge}
-                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (node.formatado.split('-').length !== selectionSourceDepth - 1) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
+                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (getNodeDepth(node.formatado) !== selectionSourceDepth - 1) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>
 
                         <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" 
@@ -1008,7 +1017,7 @@
             // Allow cloning only to nodes at level: SourceDepth - 1
             if (!node || node.id === source.id) return;
 
-            const targetDepth = node.formatado.split('-').length;
+            const targetDepth = getNodeDepth(node.formatado);
             if (targetDepth !== selectionSourceDepth - 1) {
                 showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth - 1}.`, 'info');
                 return;
@@ -1117,10 +1126,10 @@
 
             const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
             const baseFormat = parentNode ? parentNode.formatado : '';
-            const suffix = finalName.includes('-') ? finalName.split('-').pop() : finalName;
+            const suffix = finalName.includes('-') ? safeSplit(finalName).pop() : finalName;
             const formatado = baseFormat ? baseFormat + '-' + suffix : finalName;
 
-            const newNodeDepth = formatado.split('-').length;
+            const newNodeDepth = getNodeDepth(formatado);
             const isEnderecavelManual = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
 
             const newNode = {
@@ -1144,7 +1153,7 @@
             if (selectionMode) {
                 selectionSourceId = nodeId;
                 const source = window.layoutData.find(n => String(n.id) === String(nodeId));
-                selectionSourceDepth = source ? source.formatado.split('-').length : 0;
+                selectionSourceDepth = source ? getNodeDepth(source.formatado) : 0;
                 selectedTargets = [];
                 showToast('Modo Replicação: Selecione os destinos com a mesma paridade.');
             } else {
@@ -1232,8 +1241,8 @@
                     newAlias = targetParentName + String(newAlias).substring(sourceParentName.length);
                 }
 
-                const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? newName.split('-').pop() : newName) : newName;
-                const newNodeDepth = newFormat.split('-').length;
+                const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? safeSplit(newName).pop() : newName) : newName;
+                const newNodeDepth = getNodeDepth(newFormat);
                 const isEnderecavelClone = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
 
                 // Check if a node with this name already exists under the target parent
@@ -1296,19 +1305,18 @@
             let addressableDepth = 0;
 
             if (dbNodes.length > 0) {
-                // Defensive check: use empty string if formatado is null
-                standardDepth = Math.max(...dbNodes.map(n => (n.formatado || "").split('-').length));
+                standardDepth = Math.max(...dbNodes.map(n => getNodeDepth(n.formatado)));
                 // Find depth of nodes that are ALREADY addressable in DB
                 const dbAddressables = dbNodes.filter(n => n.is_enderecavel);
                 if (dbAddressables.length > 0) {
-                    addressableDepth = (dbAddressables[0].formatado || "").split('-').length;
+                    addressableDepth = getNodeDepth(dbAddressables[0].formatado);
                 } else {
                     addressableDepth = standardDepth;
                 }
             } else {
                 const allNodes = window.layoutData;
                 if (allNodes.length > 0) {
-                    standardDepth = Math.max(...allNodes.map(n => (n.formatado || "").split('-').length));
+                    standardDepth = Math.max(...allNodes.map(n => getNodeDepth(n.formatado)));
                     addressableDepth = standardDepth;
                 }
             }
@@ -1320,7 +1328,7 @@
 
             window.layoutData.forEach(node => {
                 const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
-                const currentDepth = (node.formatado || "").split('-').length;
+                const currentDepth = getNodeDepth(node.formatado);
 
                 if (hasChildren) {
                     if (node.is_enderecavel) {
