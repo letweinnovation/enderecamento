@@ -1161,6 +1161,31 @@
             }
         }
 
+        function getInferredTipoComponente(depth, parentId) {
+            // Priority 1: A DB sibling (same parent_id)
+            if (parentId) {
+                const dbSibling = window.layoutData.find(n => !n.is_new && String(n.parent_id) === String(parentId));
+                if (dbSibling && dbSibling.tipo_componente) return dbSibling.tipo_componente;
+            }
+            
+            // Priority 2: Any DB node at the same depth
+            const dbNode = window.layoutData.find(n => !n.is_new && getEffectiveDepth(n) === depth);
+            if (dbNode && dbNode.tipo_componente) return dbNode.tipo_componente;
+
+            // Priority 3: A draft sibling
+            if (parentId) {
+                const draftSibling = window.layoutData.find(n => n.is_new && String(n.parent_id) === String(parentId));
+                if (draftSibling && draftSibling.tipo_componente) return draftSibling.tipo_componente;
+            }
+
+            // Priority 4: Any draft node at the same depth
+            const draftNode = window.layoutData.find(n => n.is_new && getEffectiveDepth(n) === depth);
+            if (draftNode && draftNode.tipo_componente) return draftNode.tipo_componente;
+
+            // Fallback
+            return 1;
+        }
+
         function addNodeInLine(parentId, name) {
             let parentNode = null;
             if (parentId) {
@@ -1208,6 +1233,10 @@
             const formatado = baseFormat ? baseFormat + '-' + suffix : finalName;
 
             const newNodeDepth = getNodeDepth(formatado);
+            
+            // Try to find a sibling or node at same depth to inherit TIPO_COMPONENTE
+            const tipoComponente = getInferredTipoComponente(newNodeDepth, parentId);
+
             // If globalAddressableDepth is known, use it. Otherwise (pure-draft tree),
             // check after insertion: a node is addressable if it has no children yet
             // and its depth equals the maximum depth in the tree. We'll mark it tentatively
@@ -1220,7 +1249,8 @@
                 nome: finalName,
                 formatado: formatado,
                 is_new: true,
-                is_enderecavel: isEnderecavelManual
+                is_enderecavel: isEnderecavelManual,
+                tipo_componente: tipoComponente
             }
 
             window.layoutData.push(newNode);
@@ -1389,7 +1419,8 @@
                         alias: newAlias,
                         formatado: newFormat,
                         is_new: true,
-                        is_enderecavel: isEnderecavelClone
+                        is_enderecavel: isEnderecavelClone,
+                        tipo_componente: getInferredTipoComponente(newNodeDepth, targetParentId)
                     };
                     clones.push(clone);
                     

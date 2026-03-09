@@ -166,7 +166,8 @@ class EnderecoController extends Controller
                     'ALIAS_ENDERECO as alias',
                     'IND_ENDERECAVEL as is_enderecavel',
                     'LADO_ENDERECO as lado',
-                    'CUBAGEM_MAXIMA as max_cubagem'
+                    'CUBAGEM_MAXIMA as max_cubagem',
+                    'TIPO_COMPONENTE as tipo_componente'
                 )
                 ->where('GTIMETA_MCID', $tenantId)
                 ->where('ID_ARMAZEM', $armazemId)
@@ -323,6 +324,30 @@ class EnderecoController extends Controller
             $now = now()->format('Y-m-d H:i:s');
             $userId = auth()->id() ?? 'system';
 
+            // 1. Sort nodes by depth (number of dashes in formatado) 
+            // to ensure parents are processed before children.
+            usort($nodes, function($a, $b) {
+                return substr_count($a['formatado'], '-') <=> substr_count($b['formatado'], '-');
+            });
+
+            // 2. Pre-fetch TIPO_COMPONENTE mapping from DB for this endereçamento
+            // to use as reference for draft nodes.
+            $existingNodes = DB::connection('gace')
+                ->table('layout_endereco_fisico')
+                ->select('ENDERECO_FORMATADO', 'TIPO_COMPONENTE')
+                ->where('ID_ENDERECAMENTO', $enderecamentoId)
+                ->where('GTIMETA_MCID', $tenantId)
+                ->whereNotNull('ENDERECO_FORMATADO')
+                ->get();
+
+            $typeMapping = [];
+            foreach ($existingNodes as $nodeObj) {
+                $d = substr_count($nodeObj->ENDERECO_FORMATADO, '-');
+                if (!isset($typeMapping[$d])) {
+                    $typeMapping[$d] = $nodeObj->TIPO_COMPONENTE;
+                }
+            }
+
             $sqlLines = [];
             $sqlLines[] = "-- Script de Consolidação de Layout Físico Visual";
             $sqlLines[] = "-- Armazem ID: {$armazemId} | Enderecamento ID: {$enderecamentoId}";
@@ -343,7 +368,13 @@ class EnderecoController extends Controller
                     }
                 }
                 
-                $tipoComponente = isset($node['tipo_componente']) ? (int)$node['tipo_componente'] : 1;
+                // If tipo_componente is missing or 1 (default), try to infer from mapping or siblings
+                $tipoComponente = isset($node['tipo_componente']) ? (int)$node['tipo_componente'] : null;
+                if (!$tipoComponente || $tipoComponente === 1) {
+                    $depth = substr_count($node['formatado'], '-');
+                    $tipoComponente = $typeMapping[$depth] ?? 1;
+                }
+
                 $formatado = $node['formatado'];
                 $alias = $node['alias'] ?? $formatado;
                 $enderecavel = (isset($node['is_enderecavel']) && $node['is_enderecavel']) ? 1 : 0;
