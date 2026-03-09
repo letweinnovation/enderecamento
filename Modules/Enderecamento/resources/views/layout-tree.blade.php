@@ -364,6 +364,24 @@
             text-transform: uppercase;
         }
 
+        .cloning-badge {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border: 1px solid var(--primary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
         .btn-inline-add {
             background: var(--primary-light);
             color: var(--primary);
@@ -834,6 +852,9 @@
         function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
+            const cloningBadge = (selectionMode && String(selectionSourceId) === String(node.id)) 
+                ? '<span class="cloning-badge">Clonando...</span>' 
+                : '';
             
             // Clone and Add Buttons
             const actionBtns = `
@@ -857,6 +878,7 @@
                             <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                             ${aliasNode}
                             ${draftBadge}
+                            ${cloningBadge}
                         </div>
                         ${actionBtns}
                     </div>
@@ -883,6 +905,7 @@
                         <span style="font-weight: 600;">${node.nome}</span>
                         <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                         ${draftBadge}
+                        ${cloningBadge}
                         ${actionBtns}
                     </summary>
                     <div class="node-children">
@@ -895,10 +918,11 @@
         function handleNodeClick(nodeId) {
             if (!selectionMode) return;
             
+            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
             const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
             
             // Allow cloning to any node except itself
-            if (node.id === source.id) return;
+            if (!node || node.id === source.id) return;
 
             const idx = selectedTargets.indexOf(nodeId);
             const el = document.getElementById('node_' + nodeId);
@@ -999,10 +1023,12 @@
             selectionSourceId = sourceId;
             selectedTargets = [];
             
-            const source = window.layoutData.find(n => String(n.id) === String(sourceId));
             document.body.classList.add('selection-mode');
             document.getElementById('selectionOverlay').style.display = 'flex';
             document.getElementById('selectedCount').textContent = '0';
+
+            // Re-render to show "Clonando" tag on source
+            renderTree();
 
             // Highlight possible targets (any node except the source)
             window.layoutData.forEach(node => {
@@ -1018,6 +1044,8 @@
 
         function cancelSelectionMode() {
             selectionMode = false;
+            const oldSourceId = selectionSourceId;
+            selectionSourceId = null;
             document.body.classList.remove('selection-mode');
             document.getElementById('selectionOverlay').style.display = 'none';
             
@@ -1025,6 +1053,9 @@
             document.querySelectorAll('.selectable-sibling, .selected-target').forEach(el => {
                 el.classList.remove('selectable-sibling', 'selected-target');
             });
+
+            // Re-render to remove "Clonando" tag
+            renderTree();
         }
 
         function confirmCloning() {
@@ -1049,9 +1080,15 @@
             });
 
             window.layoutData = window.layoutData.concat(newClones);
+            
+            // Critical: Reset selection mode BEFORE renderTree to clear the "Cloning" tag
+            selectionMode = false;
+            selectionSourceId = null;
+            document.body.classList.remove('selection-mode');
+            document.getElementById('selectionOverlay').style.display = 'none';
+
             renderTree();
             updateUIStats();
-            cancelSelectionMode();
             showToast(`Estrutura replicada para ${selectedTargets.length} destinos!`);
         }
 
