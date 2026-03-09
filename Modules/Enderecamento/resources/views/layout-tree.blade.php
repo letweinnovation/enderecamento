@@ -851,7 +851,7 @@
 
         async function fetchTreeData() {
             try {
-                const url = `/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`;
+                const url = `/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}&_t=${Date.now()}`;
                 const response = await fetch(url);
                 
                 if (!response.ok) {

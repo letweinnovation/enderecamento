@@ -376,23 +376,23 @@ class EnderecoController extends Controller
                 }
 
                 $formatado = $node['formatado'];
+                $partes = explode('-', $formatado);
+                $nomeCurto = end($partes);
                 $alias = $node['alias'] ?? $formatado;
                 $enderecavel = (isset($node['is_enderecavel']) && $node['is_enderecavel']) ? 1 : 0;
                 
                 // Regra LADO_ENDERECO: apenas para nós endereçáveis, ímpar = E (Esquerdo), par = D (Direito)
                 $lado = null;
                 if ($enderecavel) {
-                    $partes = explode('-', $formatado);
-                    $ultimaParte = end($partes);
-                    if (is_numeric($ultimaParte)) {
-                        $lado = ((int)$ultimaParte % 2 !== 0) ? 'E' : 'D';
+                    if (is_numeric($nomeCurto)) {
+                        $lado = ((int)$nomeCurto % 2 !== 0) ? 'E' : 'D';
                     }
                 }
                 $ladoSql = $lado ? "'{$lado}'" : "NULL";
 
                 $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
-                    "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, LADO_ENDERECO, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, '{$now}', '{$userId}', '{$tenantId}', 0);";
+                    "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, LADO_ENDERECO, CUBAGEM_MAXIMA, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
+                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$nomeCurto}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, NULL, '{$now}', '{$userId}', '{$tenantId}', 0);";
             }
 
             $sqlLines[] = "COMMIT;";
