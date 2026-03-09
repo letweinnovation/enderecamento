@@ -742,7 +742,7 @@
 
     <!-- SQL Final Dialog -->
     <div class="modal-overlay" id="sqlFinalModal">
-        <div class="modal-card glass-card" style="max-width: 400px; max-height: 60vh; overflow: hidden; display: flex; flex-direction: column; background: white !important;">
+        <div class="modal-card glass-card" style="max-width: 90vw; max-height: 80vh; overflow-y:auto; display: flex; flex-direction: column; background: white !important;">
             <div class="modal-header" style="flex-shrink: 0;">
                 <h3 style="margin:0; font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.75rem;">
                     <i class="ph ph-check-circle"></i> Script Consolidado
@@ -753,7 +753,7 @@
                     Abaixo está o script SQL para efetivar as mudanças na base de dados.
                 </p>
                 <div style="position: relative;">
-                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 150px; max-height: 20vh; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px; resize: none;"></textarea>
+                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 120px; max-height: 15vh; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px; resize: none;"></textarea>
                     <button onclick="copyFinalSql()" style="position: absolute; top: 1rem; right: 1rem; background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
                         <i class="ph ph-copy"></i> Copiar SQL
                     </button>
