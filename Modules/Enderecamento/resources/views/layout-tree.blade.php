@@ -989,6 +989,9 @@
                 isSelectable ? 'selectable-sibling' : ''
             ].join(' ');
 
+            const iconClass = hasChildren ? 'ph-folder' : 'ph-circle-wavy';
+            const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
+
             return `
                 <details class="tree-node ${isDraft}" id="node_${node.id}">
                     <summary class="tree-summary ${selectionClasses}" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
