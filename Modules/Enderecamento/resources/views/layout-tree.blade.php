@@ -1232,6 +1232,70 @@
                 }
             }
 
+            // --- RANGE DETECTION ---
+            // Regex explanations:
+            // ^(.*?)    -> Group 1: Prefix (any characters, non-greedy)
+            // (\d+)     -> Group 2: Start number (digits)
+            // \.\.      -> Literal ".."
+            // (\d+)$    -> Group 3: End number (digits at end)
+            const rangeMatch = finalName.match(/^(.*?)(\d+)\.\.(\d+)$/);
+            
+            if (rangeMatch) {
+                const prefix = rangeMatch[1];
+                const startStr = rangeMatch[2];
+                const endStr = rangeMatch[3];
+                const startNum = parseInt(startStr);
+                const endNum = parseInt(endStr);
+                const padLength = startStr.length;
+
+                if (startNum >= endNum) {
+                    showNotice('Intervalo Inválido', 'O número inicial deve ser menor que o final.', 'error');
+                    return;
+                }
+
+                if (endNum - startNum > 100) {
+                    showNotice('Intervalo Muito Longo', 'O limite máximo para criação em lote é de 100 itens.', 'warning');
+                    return;
+                }
+
+                let addedCount = 0;
+                let skipCount = 0;
+
+                for (let i = startNum; i <= endNum; i++) {
+                    const currentSuffix = String(i).padStart(padLength, '0');
+                    const currentName = prefix + currentSuffix;
+
+                    // Uniqueness Check for each node in range
+                    const exists = window.layoutData.some(n => 
+                        String(n.parent_id) === String(parentId) && 
+                        n.nome.toLowerCase() === currentName.toLowerCase()
+                    );
+
+                    if (exists) {
+                        skipCount++;
+                        continue;
+                    }
+
+                    internalAddSingleNode(parentId, currentName);
+                    addedCount++;
+                }
+
+                if (addedCount > 0) {
+                    if (!globalAddressableDepth) {
+                        recalcDraftEnderecavel();
+                    }
+                    renderTree();
+                    focusOnSkeleton(parentId);
+                    updateUIStats();
+                    showToast(`${addedCount} nós criados com sucesso.${skipCount > 0 ? ` (${skipCount} já existiam)` : ''}`);
+                } else if (skipCount > 0) {
+                    showNotice('Nenhum nó criado', 'Todos os nós deste intervalo já existem.', 'info');
+                }
+                return;
+            }
+
+            // --- SINGLE NODE ADDITION (Original logic) ---
+
             // 2. Uniqueness Check: "Nao pode duplicar"
             const exists = window.layoutData.some(n => 
                 String(n.parent_id) === String(parentId) && 
@@ -1241,6 +1305,26 @@
             if (exists) {
                 showNotice('Nome Duplicado', `O nome "${finalName}" já existe neste nível.`, 'error');
                 return;
+            }
+
+            internalAddSingleNode(parentId, finalName);
+
+            // For pure-draft trees, recalculate is_enderecavel for ALL draft leaves
+            // based on the current max depth.
+            if (!globalAddressableDepth) {
+                recalcDraftEnderecavel();
+            }
+
+            renderTree();
+            focusOnSkeleton(parentId);
+            updateUIStats();
+        }
+
+        // Helper to encapsulate common creation logic
+        function internalAddSingleNode(parentId, finalName) {
+            let parentNode = null;
+            if (parentId) {
+                parentNode = window.layoutData.find(n => String(n.id) === String(parentId));
             }
 
             const newId = 'draft_' + Math.random().toString(36).substr(2, 9);
@@ -1253,10 +1337,7 @@
             // Try to find a sibling or node at same depth to inherit TIPO_COMPONENTE
             const tipoComponente = getInferredTipoComponente(newNodeDepth, parentId);
 
-            // If globalAddressableDepth is known, use it. Otherwise (pure-draft tree),
-            // check after insertion: a node is addressable if it has no children yet
-            // and its depth equals the maximum depth in the tree. We'll mark it tentatively
-            // and correct all drafts after the push.
+            // If globalAddressableDepth is known, use it.
             const isEnderecavelManual = globalAddressableDepth ? newNodeDepth === globalAddressableDepth : false;
 
             const newNode = {
@@ -1270,18 +1351,6 @@
             }
 
             window.layoutData.push(newNode);
-
-            // For pure-draft trees, recalculate is_enderecavel for ALL draft leaves
-            // based on the current max depth.
-            if (!globalAddressableDepth) {
-                recalcDraftEnderecavel();
-            }
-
-            renderTree();
-            focusOnSkeleton(parentId);
-            updateUIStats();
-            return; // Early return since we already pushed and rendered
-
         }
 
         // Recalculates is_enderecavel for ALL draft leaf nodes in a pure-draft tree
