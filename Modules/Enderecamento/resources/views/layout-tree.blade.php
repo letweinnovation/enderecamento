@@ -895,9 +895,11 @@
                     <button class="btn-inline-add" style="background: #f8fafc; color: #64748b;" onclick="event.preventDefault(); event.stopPropagation(); toggleSelectionMode('${node.id}')" title="Replicar Estrutura">
                         <i class="ph ph-copy"></i>
                     </button>
-                    <button class="btn-inline-add" onclick="event.preventDefault(); event.stopPropagation(); focusOnSkeleton('${node.id}')" title="Adicionar Filho">
-                        <i class="ph ph-plus"></i>
-                    </button>
+                    ${!node.is_enderecavel ? `
+                        <button class="btn-inline-add" onclick="event.preventDefault(); event.stopPropagation(); focusOnSkeleton('${node.id}')" title="Adicionar Filho">
+                            <i class="ph ph-plus"></i>
+                        </button>
+                    ` : ''}
                     ${node.is_new ? `
                         <button class="btn-inline-add" style="background: ${node.is_enderecavel ? '#dcfce7' : '#f8fafc'}; color: ${node.is_enderecavel ? '#16a34a' : '#64748b'};" 
                                 onclick="event.preventDefault(); event.stopPropagation(); toggleEnderecavel('${node.id}')" title="Tornar Endereçável">
@@ -916,13 +918,15 @@
                 node.children.forEach(c => kidsHtml += generateTreeHtml(c));
             }
             
-            // Skeleton for this container (Always present now!)
-            kidsHtml += `
-                <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('${node.id}')">
-                    <i class="ph ph-plus"></i>
-                    <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '${node.id}')" id="skeleton_${node.id}">
-                </div>
-            `;
+            // Skeleton for this container (Always present now, unless addressable!)
+            if (!node.is_enderecavel) {
+                kidsHtml += `
+                    <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('${node.id}')">
+                        <i class="ph ph-plus"></i>
+                        <input type="text" placeholder="Novo nível..." onkeydown="handleSkeletonKey(event, '${node.id}')" id="skeleton_${node.id}">
+                    </div>
+                `;
+            }
 
             const displayFormatado = (node.formatado && String(node.formatado) !== String(node.nome)) 
                 ? `<span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>` 
@@ -936,7 +940,7 @@
             const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
 
             return `
-                <details class="tree-node ${isDraft}" id="node_${node.id}" ${hasChildren ? 'open' : ''}>
+                <details class="tree-node ${isDraft}" id="node_${node.id}">
                     <summary class="tree-summary" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
                         <i class="ph ph-caret-right node-icon-caret ${!hasChildren ? 'invisible-caret' : ''}" 
                            onclick="event.stopPropagation(); ${hasChildren ? `toggleNodeExpansion('${node.id}')` : ''}" 
@@ -1272,12 +1276,18 @@
 
             const errorLeaves = [];
             const errorDepth = [];
+            const errorAddressableParent = [];
 
             window.layoutData.forEach(node => {
                 const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
                 const currentDepth = node.formatado.split('-').length;
 
-                if (!hasChildren) {
+                if (hasChildren) {
+                    // Rule 4: Addressable nodes cannot have children
+                    if (node.is_enderecavel) {
+                        errorAddressableParent.push(node.nome);
+                    }
+                } else {
                     // It's a leaf node
                     // Rule 1: Must be addressable
                     if (!node.is_enderecavel) {
@@ -1290,16 +1300,19 @@
                 }
             });
 
-            if (errorLeaves.length > 0 || errorDepth.length > 0) {
+            if (errorLeaves.length > 0 || errorDepth.length > 0 || errorAddressableParent.length > 0) {
                 let msg = "";
                 if (errorLeaves.length > 0) {
                     msg += `Os seguintes nós precisam ser marcados como "Endereçáveis" (folhas): ${errorLeaves.join(', ')}. <br><br>`;
                 }
                 if (errorDepth.length > 0) {
-                    msg += `Os rascunhos precisam seguir o padrão de profundidade do banco (${standardDepth} níveis). Incompleto em: ${errorDepth.join(', ')}.`;
+                    msg += `Os rascunhos precisam seguir o padrão de profundidade do banco (${standardDepth} níveis). Incompleto em: ${errorDepth.join(', ')}. <br><br>`;
+                }
+                if (errorAddressableParent.length > 0) {
+                    msg += `Nós marcados como "Endereçáveis" não podem ter filhos: ${errorAddressableParent.join(', ')}.`;
                 }
                 
-                showNotice('Estrutura Incompleta', msg, 'error');
+                showNotice('Estrutura Invalida', msg, 'error');
                 return false;
             }
 
