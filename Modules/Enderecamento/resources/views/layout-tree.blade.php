@@ -384,6 +384,17 @@
             text-transform: uppercase;
         }
 
+        .enderecavel-badge {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #3b82f6;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
         .cloning-badge {
             background: var(--primary-light);
             color: var(--primary-dark);
@@ -869,9 +880,9 @@
             }
         }
 
-        function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
+            const enderecavelBadge = (node.is_enderecavel || (!node.is_new && node.is_enderecavel)) ? '<span class="enderecavel-badge">Endereçável</span>' : '';
             const cloningBadge = (selectionMode && String(selectionSourceId) === String(node.id)) 
                 ? '<span class="cloning-badge">Clonando...</span>' 
                 : '';
@@ -879,7 +890,7 @@
             const hasChildren = node.children && node.children.length > 0;
             
             // Clone and Add Buttons
-            const actionBtns = `
+            let actionBtns = `
                 <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions">
                     <button class="btn-inline-add" style="background: #f8fafc; color: #64748b;" onclick="event.preventDefault(); event.stopPropagation(); toggleSelectionMode('${node.id}')" title="Replicar Estrutura">
                         <i class="ph ph-copy"></i>
@@ -887,6 +898,16 @@
                     <button class="btn-inline-add" onclick="event.preventDefault(); event.stopPropagation(); focusOnSkeleton('${node.id}')" title="Adicionar Filho">
                         <i class="ph ph-plus"></i>
                     </button>
+                    ${node.is_new ? `
+                        <button class="btn-inline-add" style="background: ${node.is_enderecavel ? '#dcfce7' : '#f8fafc'}; color: ${node.is_enderecavel ? '#16a34a' : '#64748b'};" 
+                                onclick="event.preventDefault(); event.stopPropagation(); toggleEnderecavel('${node.id}')" title="Tornar Endereçável">
+                            <i class="ph ph-check"></i>
+                        </button>
+                        <button class="btn-inline-add" style="background: #fee2e2; color: #dc2626;" 
+                                onclick="event.preventDefault(); event.stopPropagation(); deleteDraftNode('${node.id}')" title="Remover Rascunho">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    ` : ''}
                 </div>
             `;
 
@@ -920,6 +941,7 @@
                             <span style="font-weight: 600;">${node.nome}</span>
                             <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                             ${draftBadge}
+                            ${enderecavelBadge}
                             ${cloningBadge}
                         </div>
 
@@ -964,6 +986,29 @@
             }
             
             document.getElementById('selectedCount').textContent = selectedTargets.length;
+        }
+
+        function deleteDraftNode(nodeId) {
+            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
+            if (!node || !node.is_new) return;
+
+            // Find all descendants to delete them too
+            const descendants = findDescendants(nodeId);
+            const idsToDelete = [nodeId, ...descendants.map(d => d.id)];
+
+            window.layoutData = window.layoutData.filter(n => !idsToDelete.includes(n.id));
+            
+            renderTree();
+            updateUIStats();
+            showToast('Rascunho removido.');
+        }
+
+        function toggleEnderecavel(nodeId) {
+            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
+            if (!node || !node.is_new) return;
+
+            node.is_enderecavel = !node.is_enderecavel;
+            renderTree();
         }
 
         function focusOnSkeleton(parentId) {
@@ -1201,9 +1246,63 @@
             }
         }
 
+        function validateTreeStructure() {
+            // 1. Calculate Standard Depth from DB nodes
+            const dbNodes = window.layoutData.filter(n => !n.is_new);
+            let standardDepth = 0;
+            if (dbNodes.length > 0) {
+                // Find the max segments in 'formatado' among DB nodes
+                standardDepth = Math.max(...dbNodes.map(n => n.formatado.split('-').length));
+            } else {
+                // If the tree is completely new, we allow the first root's depth to be the standard
+                const allNodes = window.layoutData;
+                if (allNodes.length > 0) {
+                    standardDepth = Math.max(...allNodes.map(n => n.formatado.split('-').length));
+                }
+            }
+
+            const errorLeaves = [];
+            const errorDepth = [];
+
+            window.layoutData.forEach(node => {
+                const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
+                const currentDepth = node.formatado.split('-').length;
+
+                if (!hasChildren) {
+                    // It's a leaf node
+                    // Rule 1: Must be addressable
+                    if (!node.is_enderecavel) {
+                        errorLeaves.push(node.nome);
+                    }
+                    // Rule 2: Must reach standard depth
+                    if (currentDepth < standardDepth) {
+                        errorDepth.push(node.nome);
+                    }
+                }
+            });
+
+            if (errorLeaves.length > 0 || errorDepth.length > 0) {
+                let msg = "";
+                if (errorLeaves.length > 0) {
+                    msg += `Os seguintes nós precisam ser marcados como "Endereçáveis" (folhas): ${errorLeaves.join(', ')}. <br><br>`;
+                }
+                if (errorDepth.length > 0) {
+                    msg += `Os rascunhos precisam seguir o padrão de profundidade do banco (${standardDepth} níveis). Incompleto em: ${errorDepth.join(', ')}.`;
+                }
+                
+                showNotice('Estrutura Incompleta', msg, 'error');
+                return false;
+            }
+
+            return true;
+        }
+
         async function consolidateNewNodes() {
             const draftNodes = window.layoutData.filter(n => n.is_new);
             if(draftNodes.length === 0) return;
+
+            // Strict Validation before saving
+            if (!validateTreeStructure()) return;
 
             const btn = document.getElementById('btnSaveFinal');
             const original = btn.innerHTML;
@@ -1265,7 +1364,7 @@
             const msgEl = document.getElementById('noticeMessage');
 
             titleEl.textContent = title;
-            msgEl.textContent = message;
+            msgEl.innerHTML = message;
 
             // Reset classes
             iconWrap.className = '';
