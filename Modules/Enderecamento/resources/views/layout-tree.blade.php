@@ -780,14 +780,16 @@
     <!-- Notification Modal (Replaces alert) -->
     <div class="modal-overlay" id="noticeModal">
         <div class="modal-card glass-card" style="max-width: 450px; background: white !important;">
-            <div class="modal-body" style="text-align: center; padding: 2.5rem;">
-                <div id="noticeIcon" style="width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+            <div style="text-align: center; padding: 1.5rem 2rem 0; flex-shrink: 0;">
+                <div id="noticeIcon" style="width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem;">
                     <i class="ph ph-info"></i>
                 </div>
                 <h3 id="noticeTitle" style="margin-bottom: 0.5rem; font-weight: 800; color: var(--text-main);">Notificação</h3>
+            </div>
+            <div class="modal-body-scroll" style="text-align: center; padding: 0.5rem 2rem 1rem;">
                 <p id="noticeMessage" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;"></p>
             </div>
-            <div class="modal-footer" style="padding: 1rem 2rem 2rem; border: none; display: flex; justify-content: center;">
+            <div style="padding: 1rem 2rem 1.5rem; flex-shrink: 0; display: flex; justify-content: center;">
                 <button class="btn-save-final" style="width: 100%; justify-content: center;" onclick="closeNoticeModal()">Entendi</button>
             </div>
         </div>
@@ -1268,6 +1270,8 @@
 
             window.layoutData = window.layoutData.concat(newClones);
             
+            const clonedCount = selectedTargets.length;
+
             // Critical: Reset selection mode BEFORE renderTree to clear the "Cloning" tag
             selectionMode = false;
             selectionSourceId = null;
@@ -1277,7 +1281,7 @@
 
             renderTree();
             updateUIStats();
-            showToast(`Estrutura replicada para ${selectedTargets.length} destinos!`);
+            showToast(`Estrutura replicada para ${clonedCount} destinos!`);
         }
 
         function findDescendants(parentId) {
