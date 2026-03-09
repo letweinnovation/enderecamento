@@ -1273,18 +1273,19 @@
             let addressableDepth = 0;
 
             if (dbNodes.length > 0) {
-                standardDepth = Math.max(...dbNodes.map(n => n.formatado.split('-').length));
+                // Defensive check: use empty string if formatado is null
+                standardDepth = Math.max(...dbNodes.map(n => (n.formatado || "").split('-').length));
                 // Find depth of nodes that are ALREADY addressable in DB
                 const dbAddressables = dbNodes.filter(n => n.is_enderecavel);
                 if (dbAddressables.length > 0) {
-                    addressableDepth = dbAddressables[0].formatado.split('-').length;
+                    addressableDepth = (dbAddressables[0].formatado || "").split('-').length;
                 } else {
                     addressableDepth = standardDepth;
                 }
             } else {
                 const allNodes = window.layoutData;
                 if (allNodes.length > 0) {
-                    standardDepth = Math.max(...allNodes.map(n => n.formatado.split('-').length));
+                    standardDepth = Math.max(...allNodes.map(n => (n.formatado || "").split('-').length));
                     addressableDepth = standardDepth;
                 }
             }
@@ -1296,25 +1297,25 @@
 
             window.layoutData.forEach(node => {
                 const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
-                const currentDepth = node.formatado.split('-').length;
+                const currentDepth = (node.formatado || "").split('-').length;
 
                 if (hasChildren) {
                     if (node.is_enderecavel) {
-                        errorAddressableParent.push(node.formatado);
+                        errorAddressableParent.push(node.formatado || node.nome);
                     }
                 } else {
                     // Leaf node
                     if (!node.is_enderecavel) {
-                        errorLeaves.push(node.formatado);
+                        errorLeaves.push(node.formatado || node.nome);
                     }
                     if (currentDepth < standardDepth) {
-                        errorDepth.push(node.formatado);
+                        errorDepth.push(node.formatado || node.nome);
                     }
                 }
 
                 // Rule: Addressables MUST be at addressableDepth
                 if (node.is_enderecavel && currentDepth !== addressableDepth) {
-                    errorInvalidLevel.push(`${node.formatado} (Nível ${currentDepth}, esperado ${addressableDepth})`);
+                    errorInvalidLevel.push(`${node.formatado || node.nome} (Nível ${currentDepth}, esperado ${addressableDepth})`);
                 }
             });
 
