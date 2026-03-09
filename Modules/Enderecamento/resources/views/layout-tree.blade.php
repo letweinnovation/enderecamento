@@ -1192,6 +1192,7 @@
                 selectionSourceId = nodeId;
                 const source = window.layoutData.find(n => String(n.id) === String(nodeId));
                 selectionSourceDepth = source ? getNodeDepth(source.formatado) : 0;
+                console.log(`Cloning Source: ${nodeId} | Name: ${source?.nome} | Depth: ${selectionSourceDepth}`);
                 selectedTargets = [];
                 
                 document.body.classList.add('selection-mode');
