@@ -1206,6 +1206,12 @@
                     newName = targetParentName + k.nome.substring(sourceParentName.length);
                 }
 
+                // Smart Alias Adjustment:
+                let newAlias = k.alias;
+                if (newAlias && sourceParentName && targetParentName && String(newAlias).startsWith(sourceParentName)) {
+                    newAlias = targetParentName + String(newAlias).substring(sourceParentName.length);
+                }
+
                 const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? newName.split('-').pop() : newName) : newName;
 
                 // Check if a node with this name already exists under the target parent
@@ -1226,6 +1232,7 @@
                         id: newId,
                         parent_id: targetParentId,
                         nome: newName,
+                        alias: newAlias,
                         formatado: newFormat,
                         is_new: true
                     };
