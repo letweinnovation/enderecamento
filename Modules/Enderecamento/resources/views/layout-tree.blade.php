@@ -891,9 +891,9 @@
             });
 
             // If filtering, force open all paths to drafts
-            if (onlyDrafts) {
-                document.querySelectorAll('details').forEach(d => d.open = true);
             }
+        }
+
         function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
