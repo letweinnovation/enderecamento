@@ -891,6 +891,8 @@
             });
 
             // If filtering, force open all paths to drafts
+            if (onlyDrafts) {
+                document.querySelectorAll('details').forEach(d => d.open = true);
             }
         }
 
