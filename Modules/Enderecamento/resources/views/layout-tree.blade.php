@@ -768,6 +768,7 @@
         window.layoutData = [];
         let selectionMode = false;
         let selectionSourceId = null;
+        let selectionSourceDepth = null;
         let selectedTargets = [];
 
         document.addEventListener('DOMContentLoaded', fetchTreeData);
@@ -956,6 +957,7 @@
                             ${draftBadge}
                             ${enderecavelBadge}
                             ${cloningBadge}
+                            ${selectionMode && String(selectionSourceId) !== String(node.id) && (node.formatado.split('-').length !== selectionSourceDepth - 1) ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>
 
                         <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" 
@@ -983,8 +985,14 @@
             const node = window.layoutData.find(n => String(n.id) === String(nodeId));
             const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
             
-            // Allow cloning to any node except itself
+            // Allow cloning only to nodes at level: SourceDepth - 1
             if (!node || node.id === source.id) return;
+
+            const targetDepth = node.formatado.split('-').length;
+            if (targetDepth !== selectionSourceDepth - 1) {
+                showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth - 1}.`, 'info');
+                return;
+            }
 
             const idx = selectedTargets.indexOf(nodeId);
             const el = document.getElementById('node_' + nodeId);
@@ -1111,17 +1119,21 @@
             updateUIStats();
         }
 
-        function toggleSelectionMode(sourceId) {
-            selectionMode = true;
-            selectionSourceId = sourceId;
-            selectedTargets = [];
-            
-            document.body.classList.add('selection-mode');
-            document.getElementById('selectionOverlay').style.display = 'flex';
-            document.getElementById('selectedCount').textContent = '0';
-
-            // Re-render to show "Clonando" tag on source
+        function toggleSelectionMode(nodeId) {
+            selectionMode = !selectionMode;
+            if (selectionMode) {
+                selectionSourceId = nodeId;
+                const source = window.layoutData.find(n => String(n.id) === String(nodeId));
+                selectionSourceDepth = source ? source.formatado.split('-').length : 0;
+                selectedTargets = [];
+                showToast('Modo Replicação: Selecione os destinos com a mesma paridade.');
+            } else {
+                selectionSourceId = null;
+                selectionSourceDepth = null;
+                selectedTargets = [];
+            }
             renderTree();
+        }
 
             // Highlight possible targets (any node except the source)
             window.layoutData.forEach(node => {
@@ -1327,7 +1339,7 @@
                     msg += `<b>Falta Posição Endereçável:</b> Os seguintes caminhos não possuem uma folha marcada como "Endereçável":<br>• ${errorLeaves.join('<br>• ')}<br><br>`;
                 }
                 if (errorDepth.length > 0) {
-                    msg += `<b>Estrutura Incompleta:</b> Os seguintes rascunhos não atingiram a profundidade padrão (${standardDepth} níveis):<br>• ${errorDepth.join('<br>• ')}<br><br>`;
+                    msg += `<b>Estrutura Incompleta:</b> Os seguintes rascunhos não atingiram a profundidade padrão (${standardDepth} níveis). Você precisa criar os sub-níveis primeiro:<br>• ${errorDepth.join('<br>• ')}<br><br>`;
                 }
                 if (errorAddressableParent.length > 0) {
                     msg += `<b>Conflito de Hierarquia:</b> Nós marcados como "Endereçáveis" não podem ter filhos (devem ser folhas):<br>• ${errorAddressableParent.join('<br>• ')}`;
