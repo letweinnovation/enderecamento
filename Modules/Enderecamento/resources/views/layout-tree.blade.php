@@ -186,6 +186,21 @@
         summary::-webkit-details-marker { display: none; }
         summary::marker { display: none; }
 
+        .tree-summary {
+            pointer-events: none; /* Disable interaction on summary itself */
+        }
+        
+        .tree-summary > * {
+            pointer-events: auto; /* Enable interaction on children */
+        }
+
+        .node-icon-caret {
+            cursor: pointer;
+            padding: 0.5rem;
+            margin: -0.5rem;
+            z-index: 10;
+        }
+
         .node-icon-caret {
             font-size: 0.8rem;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -899,13 +914,15 @@
 
             return `
                 <details class="tree-node ${isDraft}" id="node_${node.id}">
-                    <summary class="tree-summary" onclick="handleNodeClick('${node.id}')">
-                        <i class="ph ph-caret-right node-icon-caret"></i>
-                        <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
-                        <span style="font-weight: 600;">${node.nome}</span>
-                        <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
-                        ${draftBadge}
-                        ${cloningBadge}
+                    <summary class="tree-summary" onclick="event.preventDefault()">
+                        <i class="ph ph-caret-right node-icon-caret" onclick="toggleNodeExpansion('${node.id}')"></i>
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="handleNodeClick('${node.id}')">
+                            <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
+                            <span style="font-weight: 600;">${node.nome}</span>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
+                            ${draftBadge}
+                            ${cloningBadge}
+                        </div>
                         ${actionBtns}
                     </summary>
                     <div class="node-children">
@@ -913,6 +930,13 @@
                     </div>
                 </details>
             `;
+        }
+
+        function toggleNodeExpansion(nodeId) {
+            const el = document.getElementById('node_' + nodeId);
+            if (el && el.tagName === 'DETAILS') {
+                el.open = !el.open;
+            }
         }
 
         function handleNodeClick(nodeId) {
