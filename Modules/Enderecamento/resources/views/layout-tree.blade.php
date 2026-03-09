@@ -304,6 +304,14 @@
             background: #e0f2fe !important;
             border-style: solid;
         }
+        .selection-mode .tree-summary:not(.selectable-sibling):not(.selected-target):not(.cloning-source) {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+        .selection-mode .selection-blocked {
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+        }
         .selection-mode .selected-target {
             background: var(--primary-light);
             border-color: var(--primary-dark);
@@ -790,7 +798,8 @@
 
         // --- Helper Functions for Null Safety ---
         function safeSplit(str, separator = '-') {
-            return (str || "").split(separator);
+            if (!str) return [];
+            return String(str).split(separator);
         }
 
         function getNodeDepth(str) {
@@ -983,10 +992,13 @@
                 : '';
 
             const isSelected = selectedTargets.map(String).includes(String(node.id));
-            const isSelectable = selectionMode && String(node.id) !== String(selectionSourceId) && getNodeDepth(node.formatado) === selectionSourceDepth;
+            const isSource = String(selectionSourceId) === String(node.id);
+            const isSelectable = selectionMode && !isSource && getNodeDepth(node.formatado) === selectionSourceDepth;
+            
             const selectionClasses = [
                 isSelected ? 'selected-target' : '',
-                isSelectable ? 'selectable-sibling' : ''
+                isSelectable ? 'selectable-sibling' : '',
+                isSource ? 'cloning-source' : ''
             ].join(' ');
 
             const iconClass = hasChildren ? 'ph-folder' : 'ph-circle-wavy';
@@ -1000,6 +1012,7 @@
                            onmousedown="event.stopPropagation()"></i>
                         
                         <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" 
+                             class="${selectionMode && !isSelectable && !isSelected && !isSource ? 'selection-blocked' : ''}"
                              onclick="event.stopPropagation(); handleNodeClick('${node.id}')" 
                              onmousedown="event.stopPropagation()">
                             ${enderecavelIcon}
