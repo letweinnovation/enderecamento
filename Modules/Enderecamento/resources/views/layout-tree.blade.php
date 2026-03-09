@@ -412,6 +412,14 @@
             text-transform: uppercase;
         }
 
+        /* Indicator shown next to each node at the addressable depth */
+        .enderecavel-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
         .cloning-badge {
             background: var(--primary-light);
             color: var(--primary-dark);
@@ -842,10 +850,21 @@
                 if (res.success) {
                     window.layoutData = res.data || [];
                     
-                    // Identify global addressable depth
-                    const dbAddressables = window.layoutData.filter(n => !n.is_new && n.is_enderecavel);
+                    // Identify global addressable depth from DB nodes marked as addressable.
+                    // Use the most frequent depth among all DB-addressable nodes for robustness.
+                    const dbAddressables = window.layoutData.filter(n => !n.is_new && n.is_enderecavel && n.formatado);
                     if (dbAddressables.length > 0) {
-                        globalAddressableDepth = getNodeDepth(dbAddressables[0].formatado);
+                        const depthCounts = {};
+                        dbAddressables.forEach(n => {
+                            const d = getNodeDepth(n.formatado);
+                            depthCounts[d] = (depthCounts[d] || 0) + 1;
+                        });
+                        globalAddressableDepth = parseInt(Object.entries(depthCounts).sort((a,b) => b[1]-a[1])[0][0]);
+                        console.log('[Tree] globalAddressableDepth (from DB):', globalAddressableDepth);
+                    } else {
+                        // No DB addressable nodes — pure-draft tree. Depth will be determined at render time.
+                        globalAddressableDepth = null;
+                        console.log('[Tree] globalAddressableDepth: null (pure-draft tree, will use deepest level)');
                     }
 
                     renderTree();
@@ -1189,7 +1208,11 @@
             const formatado = baseFormat ? baseFormat + '-' + suffix : finalName;
 
             const newNodeDepth = getNodeDepth(formatado);
-            const isEnderecavelManual = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
+            // If globalAddressableDepth is known, use it. Otherwise (pure-draft tree),
+            // check after insertion: a node is addressable if it has no children yet
+            // and its depth equals the maximum depth in the tree. We'll mark it tentatively
+            // and correct all drafts after the push.
+            const isEnderecavelManual = globalAddressableDepth ? newNodeDepth === globalAddressableDepth : false;
 
             const newNode = {
                 id: newId,
@@ -1198,13 +1221,36 @@
                 formatado: formatado,
                 is_new: true,
                 is_enderecavel: isEnderecavelManual
-            };
+            }
 
             window.layoutData.push(newNode);
-            
+
+            // For pure-draft trees, recalculate is_enderecavel for ALL draft leaves
+            // based on the current max depth.
+            if (!globalAddressableDepth) {
+                recalcDraftEnderecavel();
+            }
+
             renderTree();
             focusOnSkeleton(parentId);
             updateUIStats();
+            return; // Early return since we already pushed and rendered
+
+        }
+
+        // Recalculates is_enderecavel for ALL draft leaf nodes in a pure-draft tree
+        // (i.e., when no DB addressable depth reference exists).
+        function recalcDraftEnderecavel() {
+            const allNodes = window.layoutData;
+            if (allNodes.length === 0) return;
+            const maxDepth = Math.max(...allNodes.map(n => getNodeDepth(n.formatado || n.nome)));
+            allNodes.forEach(n => {
+                const hasChildren = allNodes.some(c => String(c.parent_id) === String(n.id));
+                const depth = getNodeDepth(n.formatado || n.nome);
+                if (n.is_new) {
+                    n.is_enderecavel = !hasChildren && depth === maxDepth;
+                }
+            });
         }
 
         function toggleSelectionMode(nodeId) {
@@ -1269,6 +1315,11 @@
             });
 
             window.layoutData = window.layoutData.concat(newClones);
+
+            // For pure-draft trees, recalculate is_enderecavel for ALL draft leaves after cloning
+            if (!globalAddressableDepth) {
+                recalcDraftEnderecavel();
+            }
             
             const clonedCount = selectedTargets.length;
 
@@ -1313,7 +1364,9 @@
 
                 const newFormat = targetBaseFormat ? targetBaseFormat + '-' + (newName.includes('-') ? safeSplit(newName).pop() : newName) : newName;
                 const newNodeDepth = getNodeDepth(newFormat);
-                const isEnderecavelClone = globalAddressableDepth && newNodeDepth === globalAddressableDepth;
+                // Use globalAddressableDepth if known; for pure-draft trees, recalcDraftEnderecavel()
+                // will correct this after all clones are concatenated.
+                const isEnderecavelClone = globalAddressableDepth ? newNodeDepth === globalAddressableDepth : false;
 
                 // Check if a node with this name already exists under the target parent
                 const existing = window.layoutData.find(n => 
@@ -1369,24 +1422,33 @@
         }
 
         function validateTreeStructure() {
-            // 1. Calculate Standard Depth and Addressable Depth from DB nodes
+            // 1. Re-run recalcDraftEnderecavel for pure-draft trees to ensure flags are up to date
+            if (!globalAddressableDepth) {
+                recalcDraftEnderecavel();
+            }
+
+            // 2. Calculate Standard Depth and Addressable Depth
             const dbNodes = window.layoutData.filter(n => !n.is_new);
+            const draftNodes = window.layoutData.filter(n => n.is_new);
             let standardDepth = 0;
             let addressableDepth = 0;
 
             if (dbNodes.length > 0) {
-                standardDepth = Math.max(...dbNodes.map(n => getNodeDepth(n.formatado)));
+                standardDepth = Math.max(...dbNodes.map(n => getNodeDepth(n.formatado || n.nome)));
                 // Find depth of nodes that are ALREADY addressable in DB
-                const dbAddressables = dbNodes.filter(n => n.is_enderecavel);
+                const dbAddressables = dbNodes.filter(n => n.is_enderecavel && n.formatado);
                 if (dbAddressables.length > 0) {
-                    addressableDepth = getNodeDepth(dbAddressables[0].formatado);
+                    // Use most common depth among addressable DB nodes
+                    const depthCounts = {};
+                    dbAddressables.forEach(n => { const d = getNodeDepth(n.formatado); depthCounts[d] = (depthCounts[d]||0)+1; });
+                    addressableDepth = parseInt(Object.entries(depthCounts).sort((a,b)=>b[1]-a[1])[0][0]);
                 } else {
                     addressableDepth = standardDepth;
                 }
             } else {
-                const allNodes = window.layoutData;
-                if (allNodes.length > 0) {
-                    standardDepth = Math.max(...allNodes.map(n => getNodeDepth(n.formatado)));
+                // Pure-draft tree: use deepest level as addressable depth
+                if (window.layoutData.length > 0) {
+                    standardDepth = Math.max(...window.layoutData.map(n => getNodeDepth(n.formatado || n.nome)));
                     addressableDepth = standardDepth;
                 }
             }
@@ -1398,24 +1460,27 @@
 
             window.layoutData.forEach(node => {
                 const hasChildren = window.layoutData.some(n => String(n.parent_id) === String(node.id));
-                const currentDepth = getNodeDepth(node.formatado);
+                const currentDepth = getNodeDepth(node.formatado || node.nome);
 
                 if (hasChildren) {
+                    // A node with children must NOT be flagged as addressable
                     if (node.is_enderecavel) {
                         errorAddressableParent.push(node.formatado || node.nome);
                     }
                 } else {
-                    // Leaf node
-                    if (!node.is_enderecavel) {
-                        errorLeaves.push(node.formatado || node.nome);
-                    }
-                    if (currentDepth < standardDepth) {
-                        errorDepth.push(node.formatado || node.nome);
+                    // Leaf node: only validate DRAFT leaves (DB leaves are already in a valid state)
+                    if (node.is_new) {
+                        if (!node.is_enderecavel) {
+                            errorLeaves.push(node.formatado || node.nome);
+                        }
+                        if (currentDepth < standardDepth) {
+                            errorDepth.push(node.formatado || node.nome);
+                        }
                     }
                 }
 
-                // Rule: Addressables MUST be at addressableDepth
-                if (node.is_enderecavel && currentDepth !== addressableDepth) {
+                // Rule: ANY node (DB or draft) marked as addressable MUST be at the expected depth
+                if (node.is_enderecavel && addressableDepth > 0 && currentDepth !== addressableDepth) {
                     errorInvalidLevel.push(`${node.formatado || node.nome} (Nível ${currentDepth}, esperado ${addressableDepth})`);
                 }
             });
@@ -1426,7 +1491,7 @@
                     msg += `<b>Nível de Endereçamento Inválido:</b> Os seguintes nós estão marcados como "Endereçáveis" mas não seguem o padrão do banco (Nível ${addressableDepth}):<br>• ${errorInvalidLevel.join('<br>• ')}<br><br>`;
                 }
                 if (errorLeaves.length > 0) {
-                    msg += `<b>Falta Posição Endereçável:</b> Os seguintes caminhos não possuem uma folha marcada como "Endereçável":<br>• ${errorLeaves.join('<br>• ')}<br><br>`;
+                    msg += `<b>Falta Posição Endereçável:</b> Os seguintes rascunhos de folha não estão marcados como "Endereçável":<br>• ${errorLeaves.join('<br>• ')}<br><br>`;
                 }
                 if (errorDepth.length > 0) {
                     msg += `<b>Estrutura Incompleta:</b> Os seguintes rascunhos não atingiram a profundidade padrão (${standardDepth} níveis). Você precisa criar os sub-níveis primeiro:<br>• ${errorDepth.join('<br>• ')}<br><br>`;
