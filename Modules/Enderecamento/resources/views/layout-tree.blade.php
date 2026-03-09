@@ -295,6 +295,15 @@
             box-shadow: 0 0 10px rgba(14, 165, 233, 0.2);
         }
 
+        .selection-mode .selectable-sibling {
+            cursor: pointer !important;
+            border: 1px dashed var(--primary-light);
+            background: #f0f9ff !important;
+        }
+        .selection-mode .selectable-sibling:hover {
+            background: #e0f2fe !important;
+            border-style: solid;
+        }
         .selection-mode .selected-target {
             background: var(--primary-light);
             border-color: var(--primary-dark);
@@ -966,12 +975,16 @@
                 ? `<span class="node-alias" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${node.alias}</span>` 
                 : '';
 
-            const iconClass = hasChildren ? 'ph-folder' : 'ph-circle-wavy'; // Simplified icon logic
-            const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
+            const isSelected = selectedTargets.map(String).includes(String(node.id));
+            const isSelectable = selectionMode && String(node.id) !== String(selectionSourceId) && getNodeDepth(node.formatado) === selectionSourceDepth;
+            const selectionClasses = [
+                isSelected ? 'selected-target' : '',
+                isSelectable ? 'selectable-sibling' : ''
+            ].join(' ');
 
             return `
                 <details class="tree-node ${isDraft}" id="node_${node.id}">
-                    <summary class="tree-summary" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
+                    <summary class="tree-summary ${selectionClasses}" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
                         <i class="ph ph-caret-right node-icon-caret ${!hasChildren ? 'invisible-caret' : ''}" 
                            onclick="event.stopPropagation(); ${hasChildren ? `toggleNodeExpansion('${node.id}')` : ''}" 
                            onmousedown="event.stopPropagation()"></i>
@@ -1026,18 +1039,17 @@
                 return;
             }
 
-            const idx = selectedTargets.indexOf(nodeId);
-            const el = document.getElementById('node_' + nodeId);
-            const summary = el.querySelector('.tree-summary') || el;
-
+            const sid = String(nodeId);
+            const idx = selectedTargets.indexOf(sid);
+            
             if (idx > -1) {
                 selectedTargets.splice(idx, 1);
-                summary.classList.remove('selected-target');
             } else {
-                selectedTargets.push(nodeId);
-                summary.classList.add('selected-target');
+                selectedTargets.push(sid);
             }
             
+            // Re-render is safer to ensure classes are applied everywhere
+            renderTree();
             document.getElementById('selectedCount').textContent = selectedTargets.length;
         }
 
@@ -1216,6 +1228,7 @@
             // Critical: Reset selection mode BEFORE renderTree to clear the "Cloning" tag
             selectionMode = false;
             selectionSourceId = null;
+            selectedTargets = [];
             document.body.classList.remove('selection-mode');
             document.getElementById('selectionOverlay').style.display = 'none';
 
