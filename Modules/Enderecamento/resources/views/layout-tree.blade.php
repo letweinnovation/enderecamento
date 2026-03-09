@@ -679,19 +679,32 @@
         <!-- Tree Controls relocated here for better UX -->
         <div class="tree-controls">
             <span style="font-weight: 700; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Visualização da Árvore</span>
-            <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 10px; align-items: center;">
-                <label class="filter-switch" title="Mostrar apenas rascunhos">
-                    <input type="checkbox" id="chkOnlyDrafts" onchange="renderTree()">
-                    <span class="filter-slider"></span>
-                    <i class="ph ph-magic-wand"></i>
-                </label>
-                <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 0.25rem;"></div>
-                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="expandAllNodes()" title="Expandir Tudo">
-                    <i class="ph ph-caret-double-down"></i>
-                </button>
-                <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="collapseAllNodes()" title="Recolher Tudo">
-                    <i class="ph ph-caret-double-up"></i>
-                </button>
+            
+            <div style="display: flex; align-items: center;">
+                <input type="file" id="importPlanningInput" style="display: none" accept=".json" onchange="importPlanning(event)">
+                <div style="display: flex; gap: 0.5rem; margin-right: 1.5rem;">
+                    <button class="btn-back" style="width: auto; padding: 0 0.75rem; height: 32px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.02); background: white; color: var(--text-main); font-size: 0.85rem; font-weight: 600; display: flex; gap: 0.4rem; cursor: pointer; transition: all 0.2s;" onclick="triggerImportPlanning()" title="Importar Planejamento" onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-main)'">
+                        <i class="ph ph-upload-simple"></i> Importar
+                    </button>
+                    <button class="btn-back" style="width: auto; padding: 0 0.75rem; height: 32px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.02); background: white; color: var(--text-main); font-size: 0.85rem; font-weight: 600; display: flex; gap: 0.4rem; cursor: pointer; transition: all 0.2s;" onclick="exportPlanning()" title="Exportar Planejamento" onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-main)'">
+                        <i class="ph ph-download-simple"></i> Exportar
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 10px; align-items: center;">
+                    <label class="filter-switch" title="Mostrar apenas rascunhos">
+                        <input type="checkbox" id="chkOnlyDrafts" onchange="renderTree()">
+                        <span class="filter-slider"></span>
+                        <i class="ph ph-magic-wand"></i>
+                    </label>
+                    <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 0.25rem;"></div>
+                    <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="expandAllNodes()" title="Expandir Tudo">
+                        <i class="ph ph-caret-double-down"></i>
+                    </button>
+                    <button class="btn-back" style="width: 32px; height: 32px; border-radius: 6px; border: none; box-shadow: none; background: white; color: var(--primary);" onclick="collapseAllNodes()" title="Recolher Tudo">
+                        <i class="ph ph-caret-double-up"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1438,6 +1451,76 @@
 
         function collapseAllNodes() {
             document.querySelectorAll('details').forEach(n => n.open = false);
+        }
+
+        function exportPlanning() {
+            const draftNodes = window.layoutData.filter(n => n.is_new);
+            if (draftNodes.length === 0) {
+                showNotice('Exportação', 'Não há modificações pendentes para exportar.', 'info');
+                return;
+            }
+
+            const dataStr = JSON.stringify(draftNodes, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = 'planejamento_enderecamento_' + enderecamentoId + '.json';
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showToast('Planejamento exportado com sucesso.');
+        }
+
+        function triggerImportPlanning() {
+            document.getElementById('importPlanningInput').click();
+        }
+
+        function importPlanning(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedNodes = JSON.parse(e.target.result);
+                    
+                    if (!Array.isArray(importedNodes)) {
+                        throw new Error("Formato de arquivo inválido. O arquivo deve conter uma lista de nós.");
+                    }
+
+                    // Remove existing drafts to replace them with the imported ones
+                    window.layoutData = window.layoutData.filter(n => !n.is_new);
+
+                    // Validate minimal node schema
+                    const validNodes = importedNodes.filter(n => typeof n === 'object' && n !== null && n.id && n.nome);
+                    
+                    if (validNodes.length > 0) {
+                        // Mark all imported nodes as drafts
+                        validNodes.forEach(n => n.is_new = true);
+                        window.layoutData = window.layoutData.concat(validNodes);
+                        
+                        // For pure-draft trees, recalculate is_enderecavel for ALL draft leaves
+                        if (!globalAddressableDepth) {
+                            recalcDraftEnderecavel();
+                        }
+
+                        renderTree();
+                        updateUIStats();
+                        showToast(`${validNodes.length} modificação(ções) importada(s) com sucesso.`);
+                    } else {
+                        showNotice('Importação Inválida', 'O arquivo não contém modificações estruturais válidas.', 'error');
+                    }
+
+                } catch (err) {
+                    showNotice('Erro de Importação', 'Falha ao processar o arquivo JSON: ' + err.message, 'error');
+                }
+                
+                // Clear the input so the same file can be selected again
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         function updateUIStats() {
