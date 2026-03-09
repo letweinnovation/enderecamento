@@ -461,14 +461,25 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .modal-body-scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding: 1.5rem 2rem;
         }
 
         .modal-card {
             width: 100%;
+            max-width: 560px;
             background: white !important;
             border-radius: 24px;
             overflow: hidden;
             animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
         }
 
         @keyframes modalScale {
@@ -742,24 +753,24 @@
 
     <!-- SQL Final Dialog -->
     <div class="modal-overlay" id="sqlFinalModal">
-        <div class="modal-card glass-card" style="max-width: 90vw; max-height: 80vh; overflow-y:auto; display: flex; flex-direction: column; background: white !important;">
+        <div class="modal-card glass-card" style="background: white !important;">
             <div class="modal-header" style="flex-shrink: 0;">
                 <h3 style="margin:0; font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.75rem;">
                     <i class="ph ph-check-circle"></i> Script Consolidado
                 </h3>
             </div>
-            <div class="modal-body" style="overflow-y: auto; flex: 1;">
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            <div class="modal-body-scroll">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
                     Abaixo está o script SQL para efetivar as mudanças na base de dados.
                 </p>
                 <div style="position: relative;">
-                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 120px; max-height: 15vh; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px; resize: none;"></textarea>
-                    <button onclick="copyFinalSql()" style="position: absolute; top: 1rem; right: 1rem; background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
-                        <i class="ph ph-copy"></i> Copiar SQL
+                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 200px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 1.25rem; padding-right: 8rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px; resize: none; box-sizing: border-box;"></textarea>
+                    <button onclick="copyFinalSql()" style="position: absolute; top: 0.75rem; right: 0.75rem; background: var(--primary); color: white; border: none; padding: 0.4rem 0.85rem; border-radius: 10px; cursor: pointer; font-size: 0.78rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="ph ph-copy"></i> Copiar
                     </button>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; flex-shrink: 0;">
+            <div class="modal-footer" style="padding: 1.25rem 2rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; flex-shrink: 0;">
                 <button class="btn-save-final" style="width: 100%;" onclick="location.reload();">
                     Finalizar e Recarregar Árvore
                 </button>
