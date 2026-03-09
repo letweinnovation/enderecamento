@@ -801,11 +801,17 @@
 
         async function fetchTreeData() {
             try {
-                const response = await fetch(`/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`);
+                const url = `/api/enderecamentos/layout-fisico?tenant_id=${tenantId}&armazem_id=${armazemId}&enderecamento_id=${enderecamentoId}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned status ${response.status}`);
+                }
+
                 const res = await response.json();
 
                 if (res.success) {
-                    window.layoutData = res.data;
+                    window.layoutData = res.data || [];
                     
                     // Identify global addressable depth
                     const dbAddressables = window.layoutData.filter(n => !n.is_new && n.is_enderecavel);
@@ -816,10 +822,11 @@
                     renderTree();
                     updateUIStats();
                 } else {
-                    handleError(res.message);
+                    handleError(res.message || 'Erro ao carregar dados do servidor.');
                 }
             } catch (e) {
-                handleError('Falha crítica de conexão.');
+                console.error("Fetch Tree Data Error:", e);
+                handleError('Falha crítica de conexão: ' + e.message);
             }
         }
 
