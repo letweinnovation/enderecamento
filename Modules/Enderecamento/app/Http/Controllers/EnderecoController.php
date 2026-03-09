@@ -379,12 +379,14 @@ class EnderecoController extends Controller
                 $alias = $node['alias'] ?? $formatado;
                 $enderecavel = (isset($node['is_enderecavel']) && $node['is_enderecavel']) ? 1 : 0;
                 
-                // Regra LADO_ENDERECO: se o final for número, ímpar = E (Esquerdo), par = D (Direito)
-                $partes = explode('-', $formatado);
-                $ultimaParte = end($partes);
+                // Regra LADO_ENDERECO: apenas para nós endereçáveis, ímpar = E (Esquerdo), par = D (Direito)
                 $lado = null;
-                if (is_numeric($ultimaParte)) {
-                    $lado = ((int)$ultimaParte % 2 !== 0) ? 'E' : 'D';
+                if ($enderecavel) {
+                    $partes = explode('-', $formatado);
+                    $ultimaParte = end($partes);
+                    if (is_numeric($ultimaParte)) {
+                        $lado = ((int)$ultimaParte % 2 !== 0) ? 'E' : 'D';
+                    }
                 }
                 $ladoSql = $lado ? "'{$lado}'" : "NULL";
 
