@@ -742,24 +742,24 @@
 
     <!-- SQL Final Dialog -->
     <div class="modal-overlay" id="sqlFinalModal">
-        <div class="modal-card glass-card" style="max-width: 700px; background: white !important;">
-            <div class="modal-header">
+        <div class="modal-card glass-card" style="max-width: 700px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; background: white !important;">
+            <div class="modal-header" style="flex-shrink: 0;">
                 <h3 style="margin:0; font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.75rem;">
                     <i class="ph ph-check-circle"></i> Script Consolidado
                 </h3>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow-y: auto; flex: 1;">
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
                     Abaixo está o script SQL para efetivar as mudanças na base de dados.
                 </p>
                 <div style="position: relative;">
-                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 300px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px;"></textarea>
+                    <textarea id="sqlFinalContent" readonly style="width: 100%; height: 300px; max-height: 40vh; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; padding: 1.5rem; background: #0f172a; color: #94a3b8; border: none; border-radius: 16px; resize: none;"></textarea>
                     <button onclick="copyFinalSql()" style="position: absolute; top: 1rem; right: 1rem; background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
                         <i class="ph ph-copy"></i> Copiar SQL
                     </button>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; gap: 1rem;">
+            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; flex-shrink: 0;">
                 <button class="btn-save-final" style="width: 100%;" onclick="location.reload();">
                     Finalizar e Recarregar Árvore
                 </button>
@@ -1008,8 +1008,9 @@
                 isSource ? 'cloning-source' : ''
             ].join(' ');
 
-            const iconClass = hasChildren ? 'ph-folder' : 'ph-circle-wavy';
-            const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
+            const iconHtml = node.is_enderecavel
+                ? `<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: var(--primary); color: white; border-radius: 6px; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;">E</span>`
+                : `<i class="ph ${hasChildren ? 'ph-folder' : 'ph-circle'} " style="color: ${hasChildren ? '#64748b' : '#94a3b8'}; font-size: 1.1rem;"></i>`;
 
             return `
                 <details class="tree-node ${isDraft}" id="node_${node.id}">
@@ -1023,7 +1024,7 @@
                              onclick="event.stopPropagation(); handleNodeClick('${node.id}')" 
                              onmousedown="event.stopPropagation()">
                             ${enderecavelIcon}
-                            <i class="ph ${iconClass}" style="color: ${iconColor}; font-size: 1.1rem;"></i>
+                            ${iconHtml}
                             <span style="font-weight: 600;">${node.nome}</span>
                             ${displayFormatado}
                             ${displayAlias}
