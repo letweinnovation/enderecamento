@@ -924,6 +924,14 @@
                 </div>
             `;
 
+            const displayFormatado = (node.formatado && String(node.formatado) !== String(node.nome)) 
+                ? `<span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>` 
+                : '';
+            
+            const displayAlias = (node.alias && String(node.alias) !== String(node.nome)) 
+                ? `<span class="node-alias" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${node.alias}</span>` 
+                : '';
+
             const iconClass = hasChildren ? 'ph-folder' : 'ph-check-circle';
             const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
 
@@ -939,7 +947,8 @@
                              onmousedown="event.stopPropagation()">
                             <i class="ph ${iconClass}" style="color: ${iconColor}; font-size: 1.1rem;"></i>
                             <span style="font-weight: 600;">${node.nome}</span>
-                            <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
+                            ${displayFormatado}
+                            ${displayAlias}
                             ${draftBadge}
                             ${enderecavelBadge}
                             ${cloningBadge}
