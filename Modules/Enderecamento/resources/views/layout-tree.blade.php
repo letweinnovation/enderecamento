@@ -985,6 +985,8 @@
         function generateTreeHtml(node) {
             const isDraft = node.is_new ? 'draft-node' : '';
             const draftBadge = node.is_new ? '<span class="draft-badge">Rascunho</span>' : '';
+            const isDisabled = node.is_disabled ? 'disabled-node' : '';
+            const disabledBadge = node.is_disabled ? '<span style="background: #fee2e2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-size: 0.70rem; font-weight: 600; margin-left: 0.5rem;"><i class="ph ph-prohibit"></i> Desabilitado</span>' : '';
             const cloningBadge = (selectionMode && String(selectionSourceId) === String(node.id)) 
                 ? '<span class="cloning-badge">Clonando...</span>' 
                 : '';
@@ -1058,7 +1060,7 @@
                 : `<i class="ph ${hasChildren ? 'ph-folder' : 'ph-circle'} " style="color: ${hasChildren ? '#64748b' : '#94a3b8'}; font-size: 1.1rem;"></i>`;
 
             return `
-                <details class="tree-node ${isDraft}" id="node_${node.id}">
+                <details class="tree-node ${isDraft} ${isDisabled}" id="node_${node.id}" ${node.is_disabled ? 'style="opacity: 0.6; filter: grayscale(100%);"' : ''}>
                     <summary class="tree-summary ${selectionClasses}" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
                         <i class="ph ph-caret-right node-icon-caret ${!hasChildren ? 'invisible-caret' : ''}" 
                            onclick="event.stopPropagation(); ${hasChildren ? `toggleNodeExpansion('${node.id}')` : ''}" 
@@ -1070,10 +1072,11 @@
                              onmousedown="event.stopPropagation()">
                             ${enderecavelIcon}
                             ${iconHtml}
-                            <span style="font-weight: 600;">${node.nome}</span>
+                            <span style="font-weight: 600; ${node.is_disabled ? 'text-decoration: line-through;' : ''}">${node.nome}</span>
                             ${displayFormatado}
                             ${displayAlias}
                             ${draftBadge}
+                            ${disabledBadge}
                             ${cloningBadge}
                             ${selectionMode && !isSource && !isSelectable ? '<span style="font-size: 0.7rem; color: #cbd5e1; font-style: italic;">(Paridade Diferente)</span>' : ''}
                         </div>

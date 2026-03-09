@@ -167,12 +167,12 @@ class EnderecoController extends Controller
                     'IND_ENDERECAVEL as is_enderecavel',
                     'LADO_ENDERECO as lado',
                     'CUBAGEM_MAXIMA as max_cubagem',
-                    'TIPO_COMPONENTE as tipo_componente'
+                    'TIPO_COMPONENTE as tipo_componente',
+                    'IND_DESABILITADO as is_disabled'
                 )
                 ->where('GTIMETA_MCID', $tenantId)
                 ->where('ID_ARMAZEM', $armazemId)
                 ->where('ID_ENDERECAMENTO', $enderecamentoId)
-                ->where('IND_DESABILITADO', 0)
                 ->orderBy('ID_LAYOUT_ENDERECO_FISICO_PAI')
                 ->orderBy('ENDERECO', 'ASC')
                 ->get();
