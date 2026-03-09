@@ -379,9 +379,18 @@ class EnderecoController extends Controller
                 $alias = $node['alias'] ?? $formatado;
                 $enderecavel = (isset($node['is_enderecavel']) && $node['is_enderecavel']) ? 1 : 0;
                 
+                // Regra LADO_ENDERECO: se o final for número, ímpar = E (Esquerdo), par = D (Direito)
+                $partes = explode('-', $formatado);
+                $ultimaParte = end($partes);
+                $lado = null;
+                if (is_numeric($ultimaParte)) {
+                    $lado = ((int)$ultimaParte % 2 !== 0) ? 'E' : 'D';
+                }
+                $ladoSql = $lado ? "'{$lado}'" : "NULL";
+
                 $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
-                    "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, '{$now}', '{$userId}', '{$tenantId}', 0);";
+                    "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, LADO_ENDERECO, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
+                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, '{$now}', '{$userId}', '{$tenantId}', 0);";
             }
 
             $sqlLines[] = "COMMIT;";
