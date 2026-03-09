@@ -207,6 +207,11 @@
             color: var(--text-muted);
         }
 
+        .invisible-caret {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
         details[open] > summary > .node-icon-caret {
             transform: rotate(90deg);
         }
@@ -871,6 +876,8 @@
                 ? '<span class="cloning-badge">Clonando...</span>' 
                 : '';
             
+            const hasChildren = node.children && node.children.length > 0;
+            
             // Clone and Add Buttons
             const actionBtns = `
                 <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions">
@@ -883,28 +890,12 @@
                 </div>
             `;
 
-            if (!node.children || node.children.length === 0) {
-                const aliasNode = node.alias && node.alias !== node.nome ? `<span class="node-alias">${node.alias}</span>` : '';
-                return `
-                    <div class="leaf-node ${isDraft}" id="node_${node.id}" onclick="handleNodeClick('${node.id}')">
-                        <i class="ph ph-check-circle leaf-icon-status"></i>
-                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem;">
-                            <strong style="font-weight: 600;">${node.nome}</strong>
-                            <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
-                            ${aliasNode}
-                            ${draftBadge}
-                            ${cloningBadge}
-                        </div>
-                        ${actionBtns}
-                    </div>
-                    <div id="kids_${node.id}" style="display:none"></div>
-                `;
-            }
-
             let kidsHtml = '';
-            node.children.forEach(c => kidsHtml += generateTreeHtml(c));
+            if (hasChildren) {
+                node.children.forEach(c => kidsHtml += generateTreeHtml(c));
+            }
             
-            // Skeleton for this container
+            // Skeleton for this container (Always present now!)
             kidsHtml += `
                 <div class="skeleton-node" onclick="event.stopPropagation(); focusOnSkeleton('${node.id}')">
                     <i class="ph ph-plus"></i>
@@ -912,18 +903,28 @@
                 </div>
             `;
 
+            const iconClass = hasChildren ? 'ph-folder' : 'ph-check-circle';
+            const iconColor = hasChildren ? '#64748b' : 'var(--primary)';
+
             return `
-                <details class="tree-node ${isDraft}" id="node_${node.id}">
+                <details class="tree-node ${isDraft}" id="node_${node.id}" ${hasChildren ? 'open' : ''}>
                     <summary class="tree-summary" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.preventDefault(); event.stopPropagation();">
-                        <i class="ph ph-caret-right node-icon-caret" onclick="event.stopPropagation(); toggleNodeExpansion('${node.id}')" onmousedown="event.stopPropagation()"></i>
-                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="event.stopPropagation(); handleNodeClick('${node.id}')" onmousedown="event.stopPropagation()">
-                            <i class="ph ph-folder" style="color: #64748b; font-size: 1.1rem;"></i>
+                        <i class="ph ph-caret-right node-icon-caret ${!hasChildren ? 'invisible-caret' : ''}" 
+                           onclick="event.stopPropagation(); ${hasChildren ? `toggleNodeExpansion('${node.id}')` : ''}" 
+                           onmousedown="event.stopPropagation()"></i>
+                        
+                        <div style="flex: 1; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" 
+                             onclick="event.stopPropagation(); handleNodeClick('${node.id}')" 
+                             onmousedown="event.stopPropagation()">
+                            <i class="ph ${iconClass}" style="color: ${iconColor}; font-size: 1.1rem;"></i>
                             <span style="font-weight: 600;">${node.nome}</span>
                             <span style="color: var(--text-muted); font-size: 0.8rem;">(${node.formatado})</span>
                             ${draftBadge}
                             ${cloningBadge}
                         </div>
-                        <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+
+                        <div style="margin-left: auto; display: flex; gap: 0.5rem;" class="node-actions" 
+                             onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
                             ${actionBtns}
                         </div>
                     </summary>
@@ -966,6 +967,14 @@
         }
 
         function focusOnSkeleton(parentId) {
+            // If parent is collapsed, expand it first
+            if (parentId) {
+                const parentEl = document.getElementById('node_' + parentId);
+                if (parentEl && parentEl.tagName === 'DETAILS' && !parentEl.open) {
+                    parentEl.open = true;
+                }
+            }
+
             const input = document.getElementById('skeleton_' + parentId);
             if (input) {
                 input.focus();
