@@ -1011,13 +1011,16 @@
         function handleNodeClick(nodeId) {
             if (!selectionMode) return;
             
-            const node = window.layoutData.find(n => String(n.id) === String(nodeId));
+            // Re-identify selection source if needed
             const source = window.layoutData.find(n => String(n.id) === String(selectionSourceId));
-            
-            // Allow cloning only to nodes at EXACT SAME level
-            if (!node || node.id === source.id) return;
+            if (!source) return;
 
-            const targetDepth = getNodeDepth(node.formatado);
+            // Allow cloning only to nodes at EXACT SAME level
+            if (String(nodeId) === String(selectionSourceId)) return;
+
+            const target = window.layoutData.find(n => String(n.id) === String(nodeId));
+            const targetDepth = getNodeDepth(target ? target.formatado : '');
+            
             if (targetDepth !== selectionSourceDepth) {
                 showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth}.`, 'info');
                 return;
@@ -1155,11 +1158,18 @@
                 const source = window.layoutData.find(n => String(n.id) === String(nodeId));
                 selectionSourceDepth = source ? getNodeDepth(source.formatado) : 0;
                 selectedTargets = [];
+                
+                document.body.classList.add('selection-mode');
+                document.getElementById('selectionOverlay').style.display = 'flex';
+                document.getElementById('selectedCount').textContent = '0';
+                
                 showToast('Modo Replicação: Selecione os destinos com a mesma paridade.');
             } else {
                 selectionSourceId = null;
                 selectionSourceDepth = null;
                 selectedTargets = [];
+                document.body.classList.remove('selection-mode');
+                document.getElementById('selectionOverlay').style.display = 'none';
             }
             renderTree();
         }
