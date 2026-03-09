@@ -164,7 +164,7 @@ class EnderecoController extends Controller
                     'ENDERECO as nome',
                     'ENDERECO_FORMATADO as formatado',
                     'ALIAS_ENDERECO as alias',
-                    'IND_ENDERECAVEL as enderecavel',
+                    'IND_ENDERECAVEL as is_enderecavel',
                     'LADO_ENDERECO as lado',
                     'CUBAGEM_MAXIMA as max_cubagem'
                 )
@@ -250,7 +250,7 @@ class EnderecoController extends Controller
                         'nome' => $sigla,
                         'formatado' => $formatado,
                         'alias' => $formatado,
-                        'enderecavel' => $enderecavel,
+                        'is_enderecavel' => $enderecavel,
                         'lado' => null,
                         'max_cubagem' => null,
                         'tipo_componente' => (int)($nivel['tipo_componente'] ?? 1),
@@ -346,7 +346,7 @@ class EnderecoController extends Controller
                 $tipoComponente = isset($node['tipo_componente']) ? (int)$node['tipo_componente'] : 1;
                 $formatado = $node['formatado'];
                 $alias = $node['alias'] ?? $formatado;
-                $enderecavel = (isset($node['enderecavel']) && $node['enderecavel']) ? 1 : 0;
+                $enderecavel = (isset($node['is_enderecavel']) && $node['is_enderecavel']) ? 1 : 0;
                 
                 $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
                     "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
