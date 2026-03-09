@@ -1135,18 +1135,6 @@
             renderTree();
         }
 
-            // Highlight possible targets (any node except the source)
-            window.layoutData.forEach(node => {
-                if (String(node.id) !== String(sourceId)) {
-                    const el = document.getElementById('node_' + node.id);
-                    if (el) {
-                        const summary = el.querySelector('.tree-summary') || el;
-                        summary.classList.add('selectable-sibling');
-                    }
-                }
-            });
-        }
-
         function cancelSelectionMode() {
             selectionMode = false;
             const oldSourceId = selectionSourceId;
