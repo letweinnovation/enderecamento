@@ -803,7 +803,14 @@
         }
 
         function getNodeDepth(str) {
-            return safeSplit(str).length;
+            if (!str) return 0;
+            return String(str).split('-').length;
+        }
+
+        function getEffectiveDepth(node) {
+            // Use formatado if available, otherwise fall back to nome for depth calculation
+            const key = (node.formatado && String(node.formatado).trim()) ? node.formatado : node.nome;
+            return getNodeDepth(key);
         }
 
         document.addEventListener('DOMContentLoaded', fetchTreeData);
@@ -993,7 +1000,7 @@
 
             const isSelected = selectedTargets.map(String).includes(String(node.id));
             const isSource = String(selectionSourceId) === String(node.id);
-            const isSelectable = selectionMode && !isSource && getNodeDepth(node.formatado) === selectionSourceDepth;
+            const isSelectable = selectionMode && !isSource && getEffectiveDepth(node) === selectionSourceDepth;
             
             const selectionClasses = [
                 isSelected ? 'selected-target' : '',
@@ -1055,7 +1062,7 @@
             if (String(nodeId) === String(selectionSourceId)) return;
 
             const target = window.layoutData.find(n => String(n.id) === String(nodeId));
-            const targetDepth = getNodeDepth(target ? target.formatado : '');
+            const targetDepth = getEffectiveDepth(target);
             
             if (targetDepth !== selectionSourceDepth) {
                 showNotice('Paridade Inválida', `Você só pode replicar esta estrutura em nós de nível ${selectionSourceDepth}.`, 'info');
@@ -1191,7 +1198,7 @@
             if (selectionMode) {
                 selectionSourceId = nodeId;
                 const source = window.layoutData.find(n => String(n.id) === String(nodeId));
-                selectionSourceDepth = source ? getNodeDepth(source.formatado) : 0;
+                selectionSourceDepth = source ? getEffectiveDepth(source) : 0;
                 console.log(`Cloning Source: ${nodeId} | Name: ${source?.nome} | Depth: ${selectionSourceDepth}`);
                 selectedTargets = [];
                 
