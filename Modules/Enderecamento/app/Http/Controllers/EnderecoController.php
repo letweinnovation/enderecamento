@@ -330,11 +330,11 @@ class EnderecoController extends Controller
                 return substr_count($a['formatado'], '-') <=> substr_count($b['formatado'], '-');
             });
 
-            // 2. Pre-fetch TIPO_COMPONENTE mapping from DB for this endereçamento
-            // to use as reference for draft nodes.
+            // 2. Pre-fetch TIPO_COMPONENTE and GTI_MODIFIED_BY mapping from DB for this endereçamento
+            // to use as reference for draft nodes and user tracking.
             $existingNodes = DB::connection('gace')
                 ->table('layout_endereco_fisico')
-                ->select('ENDERECO_FORMATADO', 'TIPO_COMPONENTE')
+                ->select('ENDERECO_FORMATADO', 'TIPO_COMPONENTE', 'GTI_MODIFIED_BY')
                 ->where('ID_ENDERECAMENTO', $enderecamentoId)
                 ->where('GTIMETA_MCID', $tenantId)
                 ->whereNotNull('ENDERECO_FORMATADO')
@@ -345,6 +345,21 @@ class EnderecoController extends Controller
                 $d = substr_count($nodeObj->ENDERECO_FORMATADO, '-');
                 if (!isset($typeMapping[$d])) {
                     $typeMapping[$d] = $nodeObj->TIPO_COMPONENTE;
+                }
+                if ($nodeObj->GTI_MODIFIED_BY) {
+                    $userId = $nodeObj->GTI_MODIFIED_BY;
+                }
+            }
+            
+            // Se nenhum registro do layout forneceu o usuário modificado, busca na tabela enderecamento
+            if ($userId === 'system' || $userId === auth()->id()) {
+                $enderecamentoObj = DB::connection('gace')
+                    ->table('enderecamento')
+                    ->select('GTI_MODIFIED_BY')
+                    ->where('Id', $enderecamentoId)
+                    ->first();
+                if ($enderecamentoObj && $enderecamentoObj->GTI_MODIFIED_BY) {
+                    $userId = $enderecamentoObj->GTI_MODIFIED_BY;
                 }
             }
 
@@ -392,7 +407,7 @@ class EnderecoController extends Controller
 
                 $sqlLines[] = "INSERT INTO layout_endereco_fisico " . 
                     "(ID, ID_ARMAZEM, ID_ENDERECAMENTO, ID_LAYOUT_ENDERECO_FISICO_PAI, TIPO_COMPONENTE, ENDERECO, ENDERECO_FORMATADO, ALIAS_ENDERECO, IND_DESABILITADO, IND_ENDERECO_PICKING, IND_ENDERECAVEL, LADO_ENDERECO, CUBAGEM_MAXIMA, GTI_MODIFIED_AT, GTI_MODIFIED_BY, GTIMETA_MCID, GTI_VERSION) " .
-                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$nomeCurto}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, NULL, '{$now}', '{$userId}', '{$tenantId}', 0) " .
+                    "VALUES ({$myId}, {$armazemId}, {$enderecamentoId}, {$parentVal}, {$tipoComponente}, '{$formatado}', '{$formatado}', '{$alias}', 0, 0, {$enderecavel}, {$ladoSql}, NULL, '{$now}', '{$userId}', '{$tenantId}', 0) " .
                     "ON DUPLICATE KEY UPDATE " .
                     "IND_DESABILITADO = 0, " .
                     "LADO_ENDERECO = VALUES(LADO_ENDERECO), " .
